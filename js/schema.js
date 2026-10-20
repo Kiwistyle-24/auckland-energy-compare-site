@@ -1,4 +1,5 @@
 // Minimal hand-written validator for data/plans.json and plan objects (no dependencies).
+import { isComparatorUrl } from './comparators.js';
 const RATE_KEYS = ['anytime', 'day', 'night', 'peak', 'offpeak'];
 const isNum = (x) => typeof x === 'number' && Number.isFinite(x);
 const isStr = (x) => typeof x === 'string' && x.length > 0;
@@ -27,6 +28,8 @@ export function validatePlan(p, where = 'plan') {
   else {
     if (!['automatic', 'manual', 'bill', 'example'].includes(p.source.method)) e.push(`${where}.source.method must be automatic|manual|bill|example`);
     if (p.source.method !== 'bill' && !isUrl(p.source.url)) e.push(`${where}.source.url must be a URL`);
+    if (p.source.url && isComparatorUrl(p.source.url)) e.push(`${where}.source.url is a comparison site; prices must come from the retailer's own website`);
+    if (p.source.method === 'automatic' && !isStr(p.retailerId)) e.push(`${where}.retailerId required for fetched plans`);
     if (!isIso(p.source.retrievedAt)) e.push(`${where}.source.retrievedAt must be an ISO date`);
   }
   if (p.effectiveFrom !== undefined && p.effectiveFrom !== null && !isIso(p.effectiveFrom)) e.push(`${where}.effectiveFrom must be an ISO date`);
@@ -43,7 +46,7 @@ export function validateManualPlans(m) {
 export function validatePlansFile(d) {
   const e = [];
   if (!d || typeof d !== 'object') return ['not an object'];
-  if (d.schemaVersion !== 1) e.push('schemaVersion must be 1');
+  if (d.schemaVersion !== 2) e.push('schemaVersion must be 2');
   if (!isIso(d.generatedAt)) e.push('generatedAt must be an ISO date');
   if (!isNum(d.gstRate)) e.push('gstRate must be a number');
   if (!Array.isArray(d.plans)) e.push('plans must be an array');
@@ -55,10 +58,12 @@ export function validatePlansFile(d) {
     if (!['not_available_automatically', 'closed', 'needs_review', 'automatic'].includes(p.status)) e.push(`providers[${i}].status invalid`);
     if (p.status !== 'automatic' && !isStr(p.reason)) e.push(`providers[${i}].reason required when not automatic`);
     if (!isIso(p.checkedAt)) e.push(`providers[${i}].checkedAt must be an ISO date`);
+    if (isComparatorUrl(p.url)) e.push(`providers[${i}].url is a comparison site`);
   });
   if (!Array.isArray(d.sources) || !d.sources.length) e.push('sources must be a non-empty array');
   else d.sources.forEach((s, i) => {
     if (!isUrl(s.url)) e.push(`sources[${i}].url must be a URL`);
+    if (isComparatorUrl(s.url)) e.push(`sources[${i}].url is a comparison site`);
     if (!['ok', 'failed', 'manual'].includes(s.status)) e.push(`sources[${i}].status must be ok|failed|manual`);
     if (s.status !== 'manual' && !isIso(s.retrievedAt)) e.push(`sources[${i}].retrievedAt must be an ISO timestamp`);
   });

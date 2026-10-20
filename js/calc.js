@@ -143,12 +143,35 @@ export function costOffer({ elecPlan, gasPlan }, scenario, opts = {}) {
   });
   const annual = round2(months.reduce((s, m) => s + m.rawTotal, 0));
   const warnings = [];
+  const assumptions = [];
   const kwh = annualKwh(scenario);
-  if (elecPlan?.userType === 'low' && kwh.elec > LOW_USER_THRESHOLD_KWH) warnings.push(`Low-user plans are for homes using up to ${LOW_USER_THRESHOLD_KWH.toLocaleString()} kWh a year; this scenario uses ${Math.round(kwh.elec).toLocaleString()} kWh.`);
+  let ineligible = false;
+  if (elecPlan?.userType === 'low') {
+    if (kwh.elec > LOW_USER_THRESHOLD_KWH) { ineligible = true; warnings.push(`Not eligible: low-user plans are only for homes using up to ${LOW_USER_THRESHOLD_KWH.toLocaleString('en-NZ')} kWh a year; this scenario uses ${Math.round(kwh.elec).toLocaleString('en-NZ')} kWh.`); }
+    assumptions.push('Low-user plan: eligible only under 8,000 kWh/yr at your main home; the low-user rules end 1 April 2027.');
+  }
   if (elecPlan?.userType === 'standard' && kwh.elec <= LOW_USER_THRESHOLD_KWH) warnings.push('You may qualify for a low-user version of this plan.');
-  if (elecPlan && !planHasOnlyAnytime(elecPlan) && !scenario.sharesFromBills) warnings.push('Time-of-use estimate uses your assumed day/night/peak split.');
+  if (elecPlan && !planHasOnlyAnytime(elecPlan)) assumptions.push(touAssumption(elecPlan, shares, !!scenario.sharesFromBills));
+  if (elecPlan?.freeHours) assumptions.push(`Free-hours plan: assumes ${pct(shares.free)} of your power use falls in the free hours (edit "When you use power"). The result depends heavily on this.`);
   if (scenario.gasKwh > 0 && scenario.mode !== 'seasonal' && !gasPlan) warnings.push('No gas plan included.');
-  return { months, annual, monthlyAvg: round2(annual / 12), warnings, bundle: !!bundle };
+  return { months, annual, monthlyAvg: round2(annual / 12), warnings, assumptions, ineligible, assumptionDependent: !!(elecPlan && !planHasOnlyAnytime(elecPlan)), bundle: !!bundle };
+}
+
+const pct = (x) => `${Math.round((Number(x) || 0) * 100)}%`;
+
+/** Plain-English statement of the usage split used to cost a time-of-use plan. */
+export function touAssumption(plan, shares = {}, fromBills = false) {
+  const r = plan.rates || {};
+  const has = (k) => r[k] !== undefined && r[k] !== null && r[k] !== '';
+  const parts = [];
+  if (has('peak')) {
+    parts.push(`${pct(shares.peak)} peak`);
+    if (has('night')) parts.push(`${pct(shares.night)} night`);
+    parts.push(`the rest (${pct(Math.max(0, 1 - (shares.peak || 0) - (has('night') ? shares.night || 0 : 0)))}) ${has('offpeak') ? 'off-peak' : 'day'}`);
+  } else if (has('day') && has('night')) {
+    parts.push(`${pct(shares.night)} night`, `${pct(1 - (shares.night || 0))} day`);
+  }
+  return `Time-of-use plan: ${fromBills ? 'uses the split from your bills' : 'assumes'} ${parts.join(', ')} of your power use (edit "When you use power"). The hours each band covers are set by the retailer.`;
 }
 
 export function planHasOnlyAnytime(p) {
@@ -159,6 +182,7 @@ export function planHasOnlyAnytime(p) {
 /** Does a plan pass the user's preference filters? */
 export function passesPrefs(plan, prefs = {}) {
   if (!plan) return true;
+  if (plan.closedToNewCustomers && prefs.includeClosed === false) return false;
   if (plan.isExample && !prefs.includeExamples) return false;
   if (plan.fuel === 'electricity' && prefs.userType && prefs.userType !== 'any' && plan.userType !== 'any' && plan.userType !== prefs.userType) return false;
   if (prefs.term === 'fixed' && plan.fixedTerm !== true) return false;
@@ -176,17 +200,34 @@ export function passesPrefs(plan, prefs = {}) {
  *   prefs.dualFuel === 'only' (same provider only) or 'separate' (ignore bundle pairing preference).
  * The baseline (your current plan) is always included and flagged.
  */
-export function rankOffers(plans, scenario, prefs = {}, baseline = null) {
+export function rankOffers(plans, scenarioIn, prefs = {}, baseline = null) {
   const opts = { promptPay: prefs.promptPay !== false };
-  const elec = plans.filter((p) => p.fuel === 'electricity' && passesPrefs(p, prefs));
-  const gas = plans.filter((p) => p.fuel === 'gas' && passesPrefs(p, { ...prefs, userType: 'any', pricing: 'any' }));
+  const fuels = prefs.fuels || 'both'; // 'both' | 'electricity' | 'gas'
+  const zero = (k) => ({ ...scenarioIn, [k]: 0, months: (scenarioIn.months || []).map((m) => ({ ...m, [k]: 0 })) });
+  const scenario = fuels === 'electricity' ? zero('gasKwh') : fuels === 'gas' ? zero('elecKwh') : scenarioIn;
+  const elec = fuels === 'gas' ? [] : plans.filter((p) => p.fuel === 'electricity' && passesPrefs(p, prefs));
+  const gas = fuels === 'electricity' ? [] : plans.filter((p) => p.fuel === 'gas' && passesPrefs(p, { ...prefs, userType: 'any', pricing: 'any' }));
+  const offers = [];
+  const finish = (base) => {
+    if (base) { base.isBaseline = true; base.label = 'Your current plan (from your bills)'; offers.push(base); }
+    // Cheapest first; incomplete (fuel missing) and ineligible offers go after the comparable ones.
+    const bucket = (o) => (o.incomplete ? 2 : o.ineligible ? 1 : 0);
+    offers.sort((x, y) => bucket(x) - bucket(y) || x.annual - y.annual);
+    const b = offers.find((o) => o.isBaseline);
+    offers.forEach((o, i) => { o.rank = i + 1; if (b) o.vsBaselineAnnual = round2(o.annual - b.annual); });
+    return offers;
+  };
+
+  if (fuels === 'gas') {
+    for (const g of gas) offers.push(makeOffer(null, g, scenario, opts));
+    return finish(baseline?.gas ? makeOffer(null, baseline.gas, scenario, opts) : null);
+  }
   // Your current plans can also be mixed with other providers ("keep current gas, switch power").
   const others = elec.length + gas.length > 0;
   if (baseline?.electricity && others) elec.push(baseline.electricity);
-  if (baseline?.gas && others) gas.push(baseline.gas);
+  if (baseline?.gas && others && fuels === 'both') gas.push(baseline.gas);
   const kwh = annualKwh(scenario);
-  const wantGas = kwh.gas > 0;
-  const offers = [];
+  const wantGas = fuels === 'both' && kwh.gas > 0;
 
   const pairOptions = (e) => {
     if (!wantGas) return [null];
@@ -212,19 +253,7 @@ export function rankOffers(plans, scenario, prefs = {}, baseline = null) {
     if (best) offers.push(best);
     else if (!(baseline && e === baseline.electricity)) offers.push(makeOffer(e, null, scenario, opts, wantGas));
   }
-  if (baseline) {
-    const b = makeOffer(baseline.electricity, wantGas ? baseline.gas : null, scenario, opts);
-    b.isBaseline = true;
-    b.label = 'Your current plan (from your bills)';
-    offers.push(b);
-  }
-  offers.sort((a, b) => (a.incomplete === b.incomplete ? a.annual - b.annual : a.incomplete ? 1 : -1));
-  const base = offers.find((o) => o.isBaseline);
-  offers.forEach((o, i) => {
-    o.rank = i + 1;
-    if (base) o.vsBaselineAnnual = round2(o.annual - base.annual);
-  });
-  return offers;
+  return finish(baseline?.electricity ? makeOffer(baseline.electricity, wantGas ? baseline.gas : null, scenario, opts) : null);
 }
 
 function makeOffer(e, g, scenario, opts, missingGas = false) {
@@ -233,7 +262,8 @@ function makeOffer(e, g, scenario, opts, missingGas = false) {
   const nm = (p, what) => (p.source?.method === 'bill' ? `current ${what} (${p.provider})` : `${p.provider} ${what}`);
   return {
     id: [e?.id, g?.id].filter(Boolean).join('+'),
-    label: g ? (r.bundle ? `${e.provider} dual fuel` : `${nm(e, 'power')} + ${nm(g, 'gas')}`) : `${e.provider}${e.source?.method === 'bill' ? ' (current)' : ''}`,
+    label: !e ? nm(g, 'gas') : g ? (r.bundle ? `${e.provider} dual fuel` : `${nm(e, 'power')} + ${nm(g, 'gas')}`) : `${e.provider}${e.source?.method === 'bill' ? ' (current)' : ''}`,
+    closed: !!(e?.closedToNewCustomers || g?.closedToNewCustomers),
     providers, elecPlan: e, gasPlan: g, ...r,
     incomplete: missingGas,
     warnings: missingGas ? [...r.warnings, 'No gas plan matched: gas cost not included, so this total is not comparable.'] : r.warnings,

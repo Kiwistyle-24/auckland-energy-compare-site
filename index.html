@@ -12,7 +12,7 @@
 <body>
   <header class="top">
     <h1>Auckland Energy Compare</h1>
-    <p class="sub">Electricity and gas plans costed against your own usage (Vector network, Auckland)</p>
+    <p class="sub">Electricity and gas plans costed against your own usage (Vector network, Auckland). Prices only from retailers' own websites.</p>
   </header>
 
   <div id="banner" class="banner" role="status">Loading data…</div>
@@ -70,6 +70,13 @@
 
         <fieldset>
           <legend>Plan preferences</legend>
+          <label>Fuel
+            <select id="prefFuels">
+              <option value="both">Electricity and gas</option>
+              <option value="electricity">Electricity only</option>
+              <option value="gas">Gas only</option>
+            </select>
+          </label>
           <label>User type
             <select id="prefUserType">
               <option value="any">Both low and standard</option>
@@ -98,6 +105,7 @@
             </select>
           </label>
           <label class="inline"><input id="prefPrompt" type="checkbox" /> I'd get prompt-payment discounts</label>
+          <label class="inline"><input id="prefClosed" type="checkbox" /> Show plans closed to new customers</label>
         </fieldset>
       </div>
 
@@ -108,28 +116,28 @@
     </section>
 
     <section class="card" id="results">
-      <h2>Results</h2>
-      <div id="best" class="best"></div>
-      <div class="table-wrap">
-        <table id="resultsTable">
-          <thead>
-            <tr>
-              <th data-sort="rank">#</th>
-              <th data-sort="label">Option</th>
-              <th>Plans</th>
-              <th data-sort="monthlyAvg" class="num">Avg / month</th>
-              <th data-sort="annual" class="num">Per year</th>
-              <th data-sort="vsBaselineAnnual" class="num">vs current</th>
-              <th>Source &amp; date</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+      <h2>Results <span class="muted small" id="resultsFor"></span></h2>
+      <div class="filters" role="group" aria-label="Quick filters">
+        <div class="seg" id="segFuels">
+          <button type="button" data-v="both">Both fuels</button><button type="button" data-v="electricity">Electricity</button><button type="button" data-v="gas">Gas</button>
+        </div>
+        <div class="seg" id="segUser">
+          <button type="button" data-v="any">Low + standard</button><button type="button" data-v="low">Low</button><button type="button" data-v="standard">Standard</button>
+        </div>
       </div>
-      <h3>Annual cost</h3>
-      <div id="chart" class="chart"></div>
-      <h3>Month by month <span class="muted small" id="seasonalLabel"></span></h3>
-      <div id="monthChart" class="chart"></div>
+      <div id="baselineCheck"></div>
+      <div id="best" class="best"></div>
+      <ol id="offerList" class="offers"></ol>
+      <h3 id="unavailable-h">Retailers we couldn't price automatically</h3>
+      <p class="small muted">These retailers don't publish Auckland prices that can be fetched from their own website (most need your address). Open their pricing page, then add the rates under <a href="#addplan">Add a quote</a>.</p>
+      <ul id="unavailableList" class="unavail"></ul>
+      <details class="charts">
+        <summary>Charts</summary>
+        <h3>Annual cost</h3>
+        <div id="chart" class="chart"></div>
+        <h3>Month by month <span class="muted small" id="seasonalLabel"></span></h3>
+        <div id="monthChart" class="chart"></div>
+      </details>
     </section>
 
     <section class="card" id="lowstd">
@@ -149,8 +157,8 @@
 
     <section class="card" id="addplan">
       <h2>Add a quote</h2>
-      <p class="small">Most retailers only show prices after you enter your address. Get a quote from the provider's site or
-        <a href="https://www.powerswitch.org.nz/" target="_blank" rel="noopener">Powerswitch</a>, then type the rates here.
+      <p class="small">Most retailers only show prices after you enter your address. Get the rates for your address from the <strong>retailer's own website</strong>
+        (links under "Retailers we couldn't price automatically"), then type them here. Comparison sites are not accepted as a source.
         Quotes are saved in this browser. Use <em>Export</em> to save them into <code>data/manual-plans.json</code> in the repo.</p>
       <form id="planForm" class="grid">
         <fieldset>
@@ -205,7 +213,7 @@
           <label>Monthly credit ($, incl. GST) <input id="fCredit" type="number" step="0.01" min="0" /></label>
           <label>Dual-fuel discount (%) <input id="fBundlePct" type="number" step="0.1" min="0" max="50" /></label>
           <label>Dual-fuel credit ($/month) <input id="fBundleCredit" type="number" step="0.01" min="0" /></label>
-          <label>Source URL <input id="fUrl" type="url" required placeholder="https://…" /></label>
+          <label>Source URL (retailer's own site) <input id="fUrl" type="url" required placeholder="https://…" /></label>
           <label>Date retrieved <input id="fDate" type="date" required /></label>
           <label>Notes <input id="fNotes" placeholder="conditions, smart meter needed…" /></label>
         </fieldset>
@@ -224,19 +232,22 @@
 
     <section class="card" id="sources">
       <h2>Data sources</h2>
-      <div id="networkInfo"></div>
       <h3>Retailers checked</h3>
       <div class="table-wrap"><table id="providerTable"></table></div>
       <h3 id="all-sources">Every source used</h3>
       <p class="small muted">Each URL the fetcher requested on the last refresh, its status and when it was retrieved (NZ time), plus the quotes you entered. Data more than 35 days old is flagged as stale.</p>
       <div class="table-wrap"><table id="sourcesTable"></table></div>
+      <details>
+        <summary>Network (lines) charges: context only, not a retail price</summary>
+        <div id="networkInfo"></div>
+      </details>
     </section>
 
     <section class="card disclaimer">
       <h2>Disclaimer</h2>
       <p class="small">These are estimates only. Real bills depend on your exact address, meter type, the
-        retailer's terms, price changes, seasonal usage and when you use power. Rates in this app come only from your own bills, quotes you entered, and
-        Vector's published network charges. Always confirm with the retailer or Powerswitch before switching.</p>
+        retailer's terms, price changes, seasonal usage and when you use power. Retail rates in this app come only from retailers' own websites
+        (fetched automatically, with the URL and time), your own bills, and quotes you entered from a retailer's site. Always confirm the rates for your address with the retailer before switching.</p>
     </section>
   </main>
   <footer class="muted small">Prices in NZ dollars incl. 15% GST unless stated. Built for personal use.</footer>

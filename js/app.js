@@ -19,8 +19,9 @@ const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
 let DATA = null;      // plans.json
 let USAGE = null;     // my-usage.json
 let state = null;     // current inputs
-let sort = { key: 'annual', dir: 1 };
 let selectedId = null;
+
+const defaultPrefs = () => ({ fuels: 'both', userType: 'any', pricing: 'any', term: 'any', dualFuel: 'any', promptPay: true, includeClosed: true });
 
 function billsScenario() {
   const d = USAGE?.default || { mode: 'average', elecKwh: 0, gasKwh: 0, shares: { night: 0.3, peak: 0.3, free: 0 } };
@@ -30,7 +31,7 @@ function billsScenario() {
     elecKwh: d.elecKwh, gasKwh: d.gasKwh,
     months: (USAGE?.months || Array.from({ length: 12 }, () => ({ elecKwh: d.elecKwh, gasKwh: d.gasKwh }))).map((m) => ({ elecKwh: m.elecKwh, gasKwh: m.gasKwh })),
     shares: { ...d.shares }, sharesFromBills: !!d.sharesFromBills,
-    prefs: { userType: 'any', pricing: 'any', term: 'any', dualFuel: 'any', promptPay: true },
+    prefs: defaultPrefs(),
   };
 }
 
@@ -49,7 +50,7 @@ async function init() {
   else if (stored) { USAGE = stored; USAGE_FROM = 'browser'; }
   bindBills();
   state = load(LS.state, null) || billsScenario();
-  if (!state.prefs) state.prefs = billsScenario().prefs;
+  state.prefs = { ...defaultPrefs(), ...(state.prefs || {}) };
   renderBanner();
   bindInputs();
   bindForm();
@@ -66,7 +67,10 @@ function renderBanner() {
   b.className = 'banner' + (errs ? ' warn' : '');
   const stale = isStale(DATA.generatedAt);
   if (stale) b.className = 'banner warn';
-  b.innerHTML = `<strong>Data last refreshed: ${fmtDateTime(DATA.generatedAt)}</strong>${stale ? ` <span class="tag stale">STALE: over ${STALE_DAYS} days old, run the refresh workflow</span>` : ''} · Vector lines prices effective ${fmtDate(ne?.effectiveFrom)} (power) and ${fmtDate(ng?.effectiveFrom)} (gas) · ${DATA.providers.length} retailers checked, ${allPlans().length} quote(s) entered` +
+  const fetched = (DATA.plans || []).filter((p) => p.source?.method === 'automatic');
+  const okRetailers = (DATA.providers || []).filter((p) => p.planCount > 0).length;
+  const quotes = allPlans().filter((p) => p.source?.method === 'manual').length;
+  b.innerHTML = `<strong>Prices last refreshed: ${fmtDateTime(DATA.generatedAt)}</strong>${stale ? ` <span class="tag stale">STALE: over ${STALE_DAYS} days old, run the refresh workflow</span>` : ''} · ${fetched.length} plan(s) fetched from ${okRetailers} retailer website(s) · ${DATA.providers.length} retailers checked${quotes ? ` · ${quotes} quote(s) you entered` : ''}` +
     (errs ? ` · ⚠ ${errs} source(s) failed on the last run; older values kept` : '') +
     (USAGE?.isPlaceholder ? ' · ⚠ my-usage.json holds PLACEHOLDER values' : '');
 }
@@ -78,9 +82,12 @@ function bindInputs() {
   $('gasKwh').addEventListener('input', (e) => { state.gasKwh = +e.target.value || 0; changed(); });
   [['shareNight', 'night'], ['sharePeak', 'peak'], ['shareFree', 'free']].forEach(([id, k]) =>
     $(id).addEventListener('input', (e) => { state.shares[k] = Math.max(0, Math.min(100, +e.target.value || 0)) / 100; changed(); }));
-  [['prefUserType', 'userType'], ['prefPricing', 'pricing'], ['prefTerm', 'term'], ['prefDual', 'dualFuel']].forEach(([id, k]) =>
-    $(id).addEventListener('change', (e) => { state.prefs[k] = e.target.value; changed(); }));
+  [['prefFuels', 'fuels'], ['prefUserType', 'userType'], ['prefPricing', 'pricing'], ['prefTerm', 'term'], ['prefDual', 'dualFuel']].forEach(([id, k]) =>
+    $(id).addEventListener('change', (e) => { state.prefs[k] = e.target.value; changed(true); }));
   $('prefPrompt').addEventListener('change', (e) => { state.prefs.promptPay = e.target.checked; changed(); });
+  $('prefClosed').addEventListener('change', (e) => { state.prefs.includeClosed = e.target.checked; changed(); });
+  [['segFuels', 'fuels'], ['segUser', 'userType']].forEach(([id, k]) => $(id).querySelectorAll('button').forEach((btn) =>
+    btn.addEventListener('click', () => { state.prefs[k] = btn.dataset.v; changed(true); })));
   $('scaleSeasonal').addEventListener('click', () => {
     const t = annualKwh({ ...state, mode: 'seasonal' });
     const fe = t.elec ? (state.elecKwh * 12) / t.elec : 1, fg = t.gas ? (state.gasKwh * 12) / t.gas : 1;
@@ -110,9 +117,6 @@ function bindInputs() {
     state = billsScenario(); changed(true);
   });
   $('resetBills').addEventListener('click', () => { state = billsScenario(); changed(true); });
-  document.querySelectorAll('#resultsTable th[data-sort]').forEach((th) => th.addEventListener('click', () => {
-    const k = th.dataset.sort; sort = { key: k, dir: sort.key === k ? -sort.dir : 1 }; renderResults();
-  }));
 }
 
 function changed(full = false) {
@@ -139,6 +143,8 @@ function renderInputs() {
   $('shareFree').value = Math.round((state.shares.free || 0) * 100);
   $('prefUserType').value = state.prefs.userType; $('prefPricing').value = state.prefs.pricing;
   $('prefTerm').value = state.prefs.term; $('prefDual').value = state.prefs.dualFuel; $('prefPrompt').checked = state.prefs.promptPay !== false;
+  $('prefFuels').value = state.prefs.fuels || 'both'; $('prefClosed').checked = state.prefs.includeClosed !== false;
+  [['segFuels', 'fuels', 'both'], ['segUser', 'userType', 'any']].forEach(([id, k, d]) => $(id).querySelectorAll('button').forEach((btn) => btn.setAttribute('aria-pressed', String(btn.dataset.v === (state.prefs[k] || d)))));
   $('sharesNote').textContent = USAGE?.default?.sharesNote || 'These shares are assumptions. Edit them to match your habits.';
   const u = USAGE;
   const from = USAGE_FROM === 'file' ? ' (auto-loaded from data/my-usage.json, local dev mode)' : USAGE_FROM === 'browser' ? ' (loaded from your file, saved in this browser)' : '';
@@ -179,48 +185,115 @@ function planDesc(p) {
   return `<div><strong>${esc(p.fuel === 'gas' ? 'Gas' : 'Power')}:</strong> ${esc(p.provider)} – ${esc(p.name)} ${userTag(p)}<br><span class="muted small">${round2(inclGst(p.dailyCents, p.gstInclusive))}c/day, ${r} (incl. GST)</span></div>`;
 }
 
+function effectiveCell(p) {
+  if (!p) return '';
+  if (p.effectiveFrom) return `effective from ${fmtDate(p.effectiveFrom)}`;
+  if (p.pricesUpdated) return `effective from: not shown (page says prices last updated ${fmtDate(p.pricesUpdated)})`;
+  if (p.source?.method === 'automatic') return 'effective from: not shown on the page';
+  return '';
+}
+function offerSource(p) {
+  if (!p) return '';
+  const tag = p.source?.method === 'bill' ? '<span class="tag bill">your bill</span>' : p.source?.method === 'automatic' ? '<span class="tag auto">retailer website</span>' : '<span class="tag manual">your quote</span>';
+  const link = p.source?.url ? `<a href="${esc(p.source.url)}" target="_blank" rel="noopener">${esc(shortUrl(p.source.url))}</a>` : esc(p.source?.note || 'from your bills (no URL)');
+  return `<div class="src">${tag} ${link}<br>prices retrieved ${fmtDateTime(p.source?.retrievedAt)}${staleTag(p.source?.retrievedAt)}${p.stale ? ' <span class="tag stale">last fetch failed: older prices</span>' : ''}${effectiveCell(p) ? `<br>${esc(effectiveCell(p))}` : ''}</div>`;
+}
+function conditionsList(o) {
+  const items = [];
+  for (const p of [o.elecPlan, o.gasPlan]) {
+    if (!p) continue;
+    const c = Array.isArray(p.conditions) ? p.conditions : p.conditions ? [p.conditions] : [];
+    if (p.fixedTerm === true) items.push(`${p.provider}: fixed term${p.exitFee ? `, exit fee ${p.exitFee}` : ''}.`);
+    else if (p.fixedTerm === false) items.push(`${p.provider}: no fixed term.`);
+    const d = p.discounts || {};
+    if (d.promptPaymentPct) items.push(`${d.promptPaymentPct}% prompt-payment discount${state.prefs.promptPay === false ? ' (not applied: you unticked it)' : ' (applied)'}.`);
+    if (d.monthlyCreditDollars) items.push(`$${d.monthlyCreditDollars}/month credit (applied).`);
+    if (d.bundle) items.push(`Dual-fuel credit${d.bundle.monthlyCreditDollars ? ` $${d.bundle.monthlyCreditDollars}/month` : ''}${d.bundle.pct ? ` ${d.bundle.pct}%` : ''}${o.bundle ? ' (applied)' : ' (not applied: needs both fuels from the same retailer)'}.`);
+    items.push(...c.filter((x) => !/^Low-user plan:/.test(x)));
+  }
+  return [...new Set(items)];
+}
+function rateLine(p) {
+  if (!p) return '';
+  const names = { anytime: 'anytime', day: 'day', night: 'night', peak: 'peak', offpeak: 'off-peak' };
+  const r = Object.entries(p.rates).map(([k, v]) => `${names[k] || k} ${round2(inclGst(v, p.gstInclusive)).toFixed(2)}c/kWh`).join(' · ');
+  return `<div class="rates"><strong>${p.fuel === 'gas' ? 'Gas' : 'Power'}:</strong> ${esc(p.provider)} – ${esc(p.name)} ${userTag(p)}<br><span class="muted">${(inclGst(p.dailyCents, p.gstInclusive) / 100).toFixed(2)} $/day · ${r} (incl. GST)</span></div>`;
+}
+
 function renderResults() {
-  const offers = rankOffers(allPlans(), state, state.prefs, baseline());
-  const sorted = [...offers].sort((a, b) => {
-    const va = a[sort.key], vb = b[sort.key];
-    if (typeof va === 'string') return sort.dir * va.localeCompare(vb);
-    return sort.dir * ((va ?? Infinity) - (vb ?? Infinity));
-  });
-  document.querySelectorAll('#resultsTable th[data-sort]').forEach((th) => th.classList.toggle('sorted-asc', th.dataset.sort === sort.key && sort.dir === 1));
-  document.querySelectorAll('#resultsTable th[data-sort]').forEach((th) => th.classList.toggle('sorted-desc', th.dataset.sort === sort.key && sort.dir === -1));
-  const best = offers.find((o) => !o.incomplete);
+  const prefs = state.prefs;
+  const offers = rankOffers(allPlans(), state, prefs, baseline());
+  const fuelsLabel = { both: 'electricity + gas', electricity: 'electricity only', gas: 'gas only' }[prefs.fuels || 'both'];
+  const a = annualKwh(state);
+  $('resultsFor').textContent = `(${fuelsLabel}; ${prefs.fuels === 'gas' ? '' : Math.round(a.elec).toLocaleString('en-NZ') + ' kWh power'}${prefs.fuels === 'both' ? ' and ' : ''}${prefs.fuels === 'electricity' ? '' : Math.round(a.gas).toLocaleString('en-NZ') + ' kWh gas'} a year)`;
+  const comparable = offers.filter((o) => !o.incomplete && !o.ineligible);
+  const best = comparable.find((o) => !o.closed) || comparable[0];
   const base = offers.find((o) => o.isBaseline);
-  const alternatives = offers.filter((o) => !o.isBaseline);
+  const openAlternatives = comparable.filter((o) => !o.isBaseline && !o.closed);
+  renderBaselineCheck();
 
   const bestEl = $('best');
-  if (!best) bestEl.innerHTML = 'Enter your usage to see results.';
-  else if (!alternatives.length) {
-    bestEl.innerHTML = `<div>Your current plan costs about <span class="big">${money0(base.annual)}</span> a year (${money(base.monthlyAvg)} a month on average).</div>
-      <p class="small">There are no other plans to compare yet. Retailers don't publish Auckland rates without an address lookup, so add quotes for your address in <a href="#addplan">Add a quote</a> (from each retailer's site or Powerswitch). They'll be ranked against your current plan here.</p>`;
+  if (!offers.length || (a.elec + a.gas === 0)) bestEl.innerHTML = 'Enter your usage above (or click <strong>Load my bills file</strong>) to see real annual costs. With zero usage only the daily charges are counted.';
+  else if (!openAlternatives.length) {
+    const cheaperClosed = comparable.filter((o) => o.closed && base && o.annual < base.annual);
+    bestEl.innerHTML = `${base ? `<div>Your current plan costs about <span class="big">${money0(base.annual)}</span> a year (${money(base.monthlyAvg)} a month on average).</div>` : ''}
+      <p class="small">None of the plans we could fetch from retailers' own websites is open to new customers${cheaperClosed.length ? ` (${cheaperClosed.length} closed plan(s) would be cheaper on paper, shown below for reference)` : ''}. Most retailers only show Auckland prices after an address lookup: use the links under <a href="#unavailable-h">Retailers we couldn't price automatically</a> and add their rates as a quote to rank them here.</p>`;
   } else if (best.isBaseline) {
-    bestEl.innerHTML = `<div>✅ Your current plan is the cheapest of the ${offers.length} options: <span class="big">${money0(best.annual)}</span> a year.</div>`;
+    bestEl.innerHTML = `<div>✅ Your current plan is the cheapest open option here: <span class="big">${money0(best.annual)}</span> a year.</div>`;
   } else {
     const save = base ? base.annual - best.annual : null;
-    bestEl.innerHTML = `<div>Best option: <strong>${esc(best.label)}</strong></div><div class="big">${money0(best.annual)} / year <span class="small muted">(${money(best.monthlyAvg)} a month on average)</span></div>
-      ${save != null ? `<div>${save > 0 ? `About <strong>${money0(save)}</strong> a year cheaper than your current plan.` : 'Not cheaper than your current plan.'}</div>` : ''}
-      ${best.warnings.length ? `<div class="warn-text">${best.warnings.map(esc).join('<br>')}</div>` : ''}`;
+    bestEl.innerHTML = `<div>Cheapest open option: <strong>${esc(best.label)}</strong></div><div class="big">${money0(best.annual)} / year <span class="small muted">(${money(best.monthlyAvg)} a month)</span></div>
+      ${save != null ? `<div>${save > 0 ? `About <strong>${money0(save)}</strong> a year cheaper than your current plan.` : 'Not cheaper than your current plan.'}</div>` : ''}`;
   }
 
-  const tb = document.querySelector('#resultsTable tbody');
-  tb.innerHTML = sorted.map((o) => `<tr data-id="${esc(o.id)}" class="${o === best ? 'best-row' : ''} ${o.isBaseline ? 'baseline-row' : ''} ${o.id === selectedId ? 'selected' : ''}">
-      <td>${o.rank}</td>
-      <td><strong>${esc(o.label)}</strong>${o.bundle ? ' <span class="tag">bundle</span>' : ''}${o.isBaseline ? ' <span class="tag bill">current</span>' : ''}${o.warnings.length ? `<div class="warn-text">${o.warnings.map(esc).join('<br>')}</div>` : ''}</td>
-      <td>${planDesc(o.elecPlan)}${planDesc(o.gasPlan)}</td>
-      <td class="num">${money(o.monthlyAvg)}</td>
-      <td class="num"><strong>${money0(o.annual)}</strong></td>
-      <td class="num ${o.vsBaselineAnnual > 0 ? 'pos' : o.vsBaselineAnnual < 0 ? 'neg' : ''}">${o.isBaseline || o.vsBaselineAnnual == null ? '—' : (o.vsBaselineAnnual > 0 ? '+' : '') + money0(o.vsBaselineAnnual)}</td>
-      <td class="small">${sourceCell(o.elecPlan)}${o.gasPlan && o.gasPlan !== o.elecPlan ? '<br>' + sourceCell(o.gasPlan) : ''}</td></tr>`).join('');
-  tb.querySelectorAll('tr').forEach((tr) => tr.addEventListener('click', () => { selectedId = tr.dataset.id; renderResults(); }));
-
+  $('offerList').innerHTML = offers.map((o) => {
+    const v = o.vsBaselineAnnual;
+    const vs = o.isBaseline || v == null ? '' : `<span class="vs ${v > 0 ? 'pos' : v < 0 ? 'neg' : ''}">${v < 0 ? 'saves ' + money0(-v) : v > 0 ? money0(v) + ' more' : 'same as current'}/yr</span>`;
+    const ut = o.elecPlan?.userType || o.gasPlan?.userType;
+    const cond = conditionsList(o);
+    return `<li class="offer ${o === best ? 'best-row' : ''} ${o.isBaseline ? 'baseline-row' : ''} ${o.closed ? 'closed' : ''} ${o.ineligible || o.incomplete ? 'dim' : ''}" data-id="${esc(o.id)}">
+      <div class="offer-head">
+        <span class="rank">${o.rank}</span>
+        <div class="who"><strong>${esc(o.label)}</strong>
+          <div>${ut === 'low' ? '<span class="tag">LOW USER</span>' : ut === 'standard' ? '<span class="tag">STANDARD USER</span>' : ''}${o.isBaseline ? '<span class="tag bill">current</span>' : ''}${o.bundle ? '<span class="tag">dual fuel</span>' : ''}${o.closed ? '<span class="tag stale">CLOSED TO NEW CUSTOMERS</span>' : ''}${o.assumptionDependent ? '<span class="tag manual">depends on your usage split</span>' : ''}${o.elecPlan?.prepay ? '<span class="tag">prepay</span>' : ''}</div>
+        </div>
+        <div class="cost"><span class="big">${money0(o.annual)}</span><span class="small muted">/yr · ${money0(o.monthlyAvg)}/mo</span>${vs}</div>
+      </div>
+      ${rateLine(o.elecPlan)}${o.gasPlan && o.gasPlan !== o.elecPlan ? rateLine(o.gasPlan) : ''}
+      ${o.warnings.length ? `<div class="warn-text">${o.warnings.map(esc).join('<br>')}</div>` : ''}
+      ${o.assumptions.length ? `<div class="assume">${o.assumptions.map((x) => `ⓘ ${esc(x)}`).join('<br>')}</div>` : ''}
+      ${cond.length ? `<details class="cond"><summary>Conditions (${cond.length})</summary><ul>${cond.map((c) => `<li>${esc(c)}</li>`).join('')}</ul></details>` : ''}
+      <div class="srcs">${offerSource(o.elecPlan)}${o.gasPlan && o.gasPlan !== o.elecPlan ? offerSource(o.gasPlan) : ''}</div>
+    </li>`;
+  }).join('');
+  $('offerList').querySelectorAll('li.offer').forEach((li) => li.addEventListener('click', (e) => { if (e.target.closest('a,summary')) return; selectedId = li.dataset.id; renderMonthChart(offers.find((o) => o.id === selectedId), base); }));
+  renderUnavailable();
   renderLowStd();
-  renderBarChart(offers.filter((o) => !o.incomplete).slice(0, 12), best);
+  renderBarChart(comparable.slice(0, 12), best);
   const sel = offers.find((o) => o.id === selectedId) || best;
   renderMonthChart(sel, base);
+}
+
+function renderUnavailable() {
+  const statusText = { not_available_automatically: 'Not available', closed: 'Closed / not selling', needs_review: 'Needs review' };
+  const rows = (DATA.providers || []).filter((p) => !(p.planCount > 0));
+  $('unavailableList').innerHTML = rows.map((p) => `<li><div><strong>${esc(p.name)}</strong> <span class="tag ${p.status === 'closed' ? 'stale' : ''}">${esc(statusText[p.status] || p.status)}</span> <span class="small muted">${esc((p.fuels || []).join(' + '))}</span></div>
+    <div class="small">${esc(p.reason || '')}</div>
+    <div class="small"><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.name)} pricing page ↗</a>${(p.links || []).map((l) => ` · <a href="${esc(l)}" target="_blank" rel="noopener">${esc(l.split('/').pop())} ↗</a>`).join('')} <span class="muted">· checked ${fmtDateTime(p.checkedAt)}</span></div></li>`).join('') || '<li class="muted small">None.</li>';
+}
+
+/** Does a published retailer plan match the rates printed on your bill? (Runs only in your browser.) */
+function renderBaselineCheck() {
+  const el = $('baselineCheck');
+  const b = baseline()?.electricity;
+  if (!b) { el.innerHTML = ''; return; }
+  const same = (x, y) => Math.abs(x - y) < 0.006;
+  const bi = (v) => inclGst(v, b.gstInclusive);
+  const m = (DATA.plans || []).find((p) => p.fuel === 'electricity' && p.userType === b.userType && same(inclGst(p.dailyCents, p.gstInclusive), bi(b.dailyCents))
+    && Object.keys(b.rates).length === Object.keys(p.rates).length && Object.entries(b.rates).every(([k, v]) => p.rates[k] !== undefined && same(inclGst(p.rates[k], p.gstInclusive), bi(v))));
+  el.innerHTML = m
+    ? `<div class="rec small">✔ <strong>Bill check:</strong> your current electricity rates (${(bi(b.dailyCents) / 100).toFixed(2)} $/day + ${Object.values(b.rates).map((v) => bi(v).toFixed(2) + 'c/kWh').join(', ')} incl. GST) exactly match <strong>${esc(m.provider)} – ${esc(m.name)} (${esc(m.userType)} user)</strong> as published on <a href="${esc(m.source.url)}" target="_blank" rel="noopener">${esc(shortUrl(m.source.url))}</a> (retrieved ${fmtDateTime(m.source.retrievedAt)}).${/frank/i.test(m.provider) && /genesis/i.test(b.provider) ? ' Frank is a Genesis brand; Genesis itself does not publish Auckland rates.' : ''}</div>`
+    : `<div class="rec small warnbox">⚠ <strong>Bill check:</strong> no published retailer plan matches the rates on your bill exactly. Your retailer may have changed prices since that bill, or doesn't publish them.</div>`;
 }
 
 function renderBarChart(offers, best) {
@@ -258,12 +331,12 @@ function renderScenarioCompare() {
   const scen = [{ ...billsScenario() }, ...Object.values(load(LS.scenarios, {}))];
   const rows = scen.map((s) => {
     const o = rankOffers(allPlans(), s, s.prefs || state.prefs, baseline());
-    const best = o.find((x) => !x.incomplete), base = o.find((x) => x.isBaseline), a = annualKwh(s);
+    const best = o.find((x) => !x.incomplete && !x.ineligible && !x.closed), base = o.find((x) => x.isBaseline), a = annualKwh(s);
     return `<tr><td><strong>${esc(s.name)}</strong>${s.name === (state.name || MY_BILLS) ? ' <span class="tag">showing</span>' : ''}</td><td class="num">${Math.round(a.elec).toLocaleString()}</td><td class="num">${Math.round(a.gas).toLocaleString()}</td>
       <td class="num">${base ? money0(base.annual) : '—'}</td><td>${best ? esc(best.label) : '—'}</td><td class="num">${best ? money0(best.annual) : '—'}</td>
       <td class="num">${best && base ? money0(base.annual - best.annual) : '—'}</td></tr>`;
   });
-  $('scenarioTable').innerHTML = `<thead><tr><th>Scenario</th><th class="num">Power kWh/yr</th><th class="num">Gas kWh/yr</th><th class="num">Current plan /yr</th><th>Best option</th><th class="num">Best /yr</th><th class="num">Saving /yr</th></tr></thead><tbody>${rows.join('')}</tbody>`;
+  $('scenarioTable').innerHTML = `<thead><tr><th>Scenario</th><th class="num">Power kWh/yr</th><th class="num">Gas kWh/yr</th><th class="num">Current plan /yr</th><th>Cheapest open option</th><th class="num">Best /yr</th><th class="num">Saving /yr</th></tr></thead><tbody>${rows.join('')}</tbody>`;
 }
 
 // ---------- manual quotes ----------
@@ -366,16 +439,16 @@ function renderProvidersList() {
 
 function renderSources() {
   const statusText = { not_available_automatically: 'Not available automatically', closed: 'Closed / not selling', needs_review: 'Needs review', automatic: 'Fetched automatically' };
-  $('providerTable').innerHTML = `<thead><tr><th>Retailer</th><th>Fuels</th><th>Status</th><th>Why</th><th>Checked</th></tr></thead><tbody>${
-    [...(DATA.providers || []), ...(DATA.comparators || []).map((c) => ({ ...c, status: 'not_available_automatically', reason: c.note, fuels: ['comparison'], checkedAt: DATA.generatedAt }))]
-      .map((p) => `<tr><td><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.name)}</a></td><td class="small">${esc((p.fuels || []).join(', '))}</td><td class="small">${esc(statusText[p.status] || p.status)}</td><td class="small">${esc(p.reason)}</td><td class="small">${fmtDateTime(p.checkedAt)}${staleTag(p.checkedAt)}</td></tr>`).join('')}</tbody>`;
+  $('providerTable').innerHTML = `<thead><tr><th>Retailer</th><th>Fuels</th><th>Status</th><th class="num">Plans</th><th>Why</th><th>Checked</th></tr></thead><tbody>${
+    (DATA.providers || [])
+      .map((p) => `<tr><td><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.name)}</a></td><td class="small">${esc((p.fuels || []).join(', '))}</td><td class="small">${esc(statusText[p.status] || p.status)}</td><td class="num">${p.planCount || 0}</td><td class="small">${esc(p.reason || 'Rates fetched from the retailer\'s own website.')}</td><td class="small">${fmtDateTime(p.checkedAt)}${staleTag(p.checkedAt)}</td></tr>`).join('')}</tbody>`;
   const ne = DATA.networkCharges?.electricity, ng = DATA.networkCharges?.gas;
   const row = (r) => `<tr><td>${esc(r.code)}</td><td>${esc(r.userType)} · ${esc(r.meter)} · ${esc(r.control)}</td><td class="num">${round2(r.dailyCentsExGst * 1.15)}c</td><td class="num">${r.anytimeCentsExGst != null ? round2(r.anytimeCentsExGst * 1.15) + 'c' : `${round2(r.offpeakCentsExGst * 1.15)}c / ${round2(r.peakCentsExGst * 1.15)}c`}</td></tr>`;
   let lines = '';
   if (ne) {
     const anyLow = ne.rows.find((r) => r.code === 'ARNLU');
     const est = anyLow ? (AVG_DAYS_PER_MONTH * anyLow.dailyCentsExGst + state.elecKwh * anyLow.anytimeCentsExGst) * 1.15 / 100 : null;
-    lines += `<h3>Vector electricity lines charges (fetched automatically)</h3>
+    lines += `<h3>Vector electricity lines charges (context only, not a retail price)</h3>
       <p class="small">These are what Vector charges retailers to deliver power on the Auckland network. They are included in every retailer's price, so they aren't a plan you can buy, but they show how much of a bill is fixed by the network.
       ${est ? `For your average month on a low-user anytime connection that's about <strong>${money(est)}</strong> of your power bill.` : ''}
       Effective from ${fmtDate(ne.effectiveFrom)} · <a href="${esc(ne.source.url)}" target="_blank" rel="noopener">${esc(ne.source.url)}</a> · retrieved ${fmtDateTime(ne.source.retrievedAt)}${staleTag(ne.source.retrievedAt)}${ne.stale ? ' · ⚠ stale (last fetch failed)' : ''}</p>
@@ -384,7 +457,7 @@ function renderSources() {
   }
   if (ng) {
     const g = ng.rows[0];
-    lines += `<h3>Vector gas distribution charges (fetched automatically)</h3><p class="small">Residential (${esc(g.code)}): ${round2(g.dailyCentsExGst * 1.15)}c/day incl. GST, ${round2(g.variableCentsExGst * 1.15)}c/kWh. Effective from ${fmtDate(ng.effectiveFrom)} · <a href="${esc(ng.source.url)}" target="_blank" rel="noopener">${esc(ng.source.url)}</a> · retrieved ${fmtDateTime(ng.source.retrievedAt)}${staleTag(ng.source.retrievedAt)}${ng.stale ? ' · ⚠ stale' : ''}</p>`;
+    lines += `<h3>Vector gas distribution charges (context only, not a retail price)</h3><p class="small">Residential (${esc(g.code)}): ${round2(g.dailyCentsExGst * 1.15)}c/day incl. GST, ${round2(g.variableCentsExGst * 1.15)}c/kWh. Effective from ${fmtDate(ng.effectiveFrom)} · <a href="${esc(ng.source.url)}" target="_blank" rel="noopener">${esc(ng.source.url)}</a> · retrieved ${fmtDateTime(ng.source.retrievedAt)}${staleTag(ng.source.retrievedAt)}${ng.stale ? ' · ⚠ stale' : ''}</p>`;
   }
   renderSourcesTable();
   $('networkInfo').innerHTML = lines + `<ul class="small">${(DATA.notes || []).map((n) => `<li>${esc(n)}</li>`).join('')}</ul>`;
@@ -422,7 +495,7 @@ function renderLowStd() {
     const own = have.source?.method === 'bill';
     const cost = costOffer({ elecPlan: { ...have, discounts: {} } }, scen).annual;
     return `<tr><td>${esc(have.provider)} – ${esc(have.name)}${own ? ' <span class="tag bill">current</span>' : ''}</td><td class="num">${g.low ? money0(cost) : '—'}</td><td class="num">${g.standard ? money0(cost) : '—'}</td><td class="num">—</td>
-      <td class="small">Only the ${have.userType}-user version is in the data. ${own ? `Your bills only show your current low-user rates. Get the ${have.provider} standard-user rates for your address (from their site or Powerswitch) and add them with "Also enter the other user-type version" to see the break-even.` : 'Add the other version of this quote to see the break-even.'}</td></tr>`;
+      <td class="small">Only the ${have.userType}-user version is in the data. ${own ? `Your bills only show your current low-user rates. Get the ${have.provider} standard-user rates for your address from the retailer's own website and add them with "Also enter the other user-type version" to see the break-even.` : 'Add the other version of this quote to see the break-even.'}</td></tr>`;
   });
   const verdict = a <= 8000
     ? `<div class="rec">At <strong>${Math.round(a).toLocaleString()} kWh a year</strong> you are under the 8,000 kWh low-user threshold, so a <strong>low-user plan is likely cheaper</strong> for you while the rules still apply. Check the table below for the actual figures for each quote. After 1 April 2027 retailers can change or drop low-user plans, so check again then.</div>`
