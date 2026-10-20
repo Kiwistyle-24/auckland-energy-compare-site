@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Auckland Energy Compare</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <meta name="aec-build" content="public" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Ctext y=%2214%22 font-size=%2214%22%3E%E2%9A%A1%3C/text%3E%3C/svg%3E" />
+</head>
+<body>
+  <header class="top">
+    <h1>Auckland Energy Compare</h1>
+    <p class="sub">Electricity and gas plans costed against your own usage (Vector network, Auckland)</p>
+  </header>
+
+  <div id="banner" class="banner" role="status">Loading data…</div>
+
+  <main>
+    <section class="card" id="inputs">
+      <div class="row between">
+        <h2>Your usage</h2>
+        <div class="scenario-bar">
+          <label>Scenario
+            <select id="scenarioSelect"></select>
+          </label>
+          <button id="saveScenario" type="button">Save as…</button>
+          <button id="deleteScenario" type="button" class="ghost">Delete</button>
+          <button id="resetBills" type="button" class="ghost">Reset to my bills</button>
+        </div>
+      </div>
+      <p id="usageSource" class="muted small"></p>
+      <div class="row bills-bar">
+        <label class="button">Load my bills file <input type="file" id="loadBills" accept=".json,application/json" hidden /></label>
+        <button type="button" id="pasteBillsBtn" class="ghost">Paste JSON</button>
+        <button type="button" id="forgetBills" class="ghost">Remove my bills from this browser</button>
+        <span id="billsMsg" class="small"></span>
+      </div>
+      <div id="pasteBox" hidden>
+        <label>Paste the contents of your <code>my-usage.json</code>
+          <textarea id="pasteBills" rows="6" spellcheck="false"></textarea>
+        </label>
+        <button type="button" id="pasteBillsLoad">Load pasted JSON</button>
+      </div>
+      <p class="small muted">🔒 Your bills file is read and kept <strong>only in this browser</strong> (localStorage). It is never uploaded, and this public site contains no personal data.</p>
+
+      <div class="grid">
+        <fieldset>
+          <legend>Usage</legend>
+          <label class="inline"><input type="radio" name="mode" value="average" /> Same every month</label>
+          <label class="inline"><input type="radio" name="mode" value="seasonal" /> Month by month (seasonal)</label>
+          <label>Electricity per month (kWh)
+            <input id="elecKwh" type="number" min="0" step="1" inputmode="numeric" />
+          </label>
+          <label>Gas per month (kWh) <span class="muted small">0 = no gas</span>
+            <input id="gasKwh" type="number" min="0" step="1" inputmode="numeric" />
+          </label>
+          <p class="muted small" id="annualSummary"></p>
+          <button type="button" id="scaleSeasonal" class="ghost small">Rescale months to these averages</button>
+        </fieldset>
+
+        <fieldset>
+          <legend>When you use power <span class="muted small">(time-of-use plans only)</span></legend>
+          <label>Night share (%) <input id="shareNight" type="number" min="0" max="100" step="1" /></label>
+          <label>Peak share (%) <input id="sharePeak" type="number" min="0" max="100" step="1" /></label>
+          <label>In "free hours" windows (%) <input id="shareFree" type="number" min="0" max="100" step="1" /></label>
+          <p class="muted small" id="sharesNote"></p>
+        </fieldset>
+
+        <fieldset>
+          <legend>Plan preferences</legend>
+          <label>User type
+            <select id="prefUserType">
+              <option value="any">Both low and standard</option>
+              <option value="low">Low user only</option>
+              <option value="standard">Standard user only</option>
+            </select>
+          </label>
+          <label>Electricity pricing
+            <select id="prefPricing">
+              <option value="any">Any</option>
+              <option value="anytime">Single anytime rate</option>
+              <option value="tou">Time-of-use (day/night, peak/off-peak)</option>
+            </select>
+          </label>
+          <label>Contract
+            <select id="prefTerm">
+              <option value="any">Any</option>
+              <option value="open">No fixed term</option>
+              <option value="fixed">Fixed term / fixed price</option>
+            </select>
+          </label>
+          <label>Dual fuel
+            <select id="prefDual">
+              <option value="any">Cheapest combination (any providers)</option>
+              <option value="only">Same provider for power and gas only</option>
+            </select>
+          </label>
+          <label class="inline"><input id="prefPrompt" type="checkbox" /> I'd get prompt-payment discounts</label>
+        </fieldset>
+      </div>
+
+      <details id="seasonalBox">
+        <summary>Edit month-by-month usage</summary>
+        <div class="table-wrap"><table id="seasonalTable" class="compact"></table></div>
+      </details>
+    </section>
+
+    <section class="card" id="results">
+      <h2>Results</h2>
+      <div id="best" class="best"></div>
+      <div class="table-wrap">
+        <table id="resultsTable">
+          <thead>
+            <tr>
+              <th data-sort="rank">#</th>
+              <th data-sort="label">Option</th>
+              <th>Plans</th>
+              <th data-sort="monthlyAvg" class="num">Avg / month</th>
+              <th data-sort="annual" class="num">Per year</th>
+              <th data-sort="vsBaselineAnnual" class="num">vs current</th>
+              <th>Source &amp; date</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <h3>Annual cost</h3>
+      <div id="chart" class="chart"></div>
+      <h3>Month by month <span class="muted small" id="seasonalLabel"></span></h3>
+      <div id="monthChart" class="chart"></div>
+    </section>
+
+    <section class="card" id="lowstd">
+      <h2>Low user vs standard user</h2>
+      <p class="small">Low-user plans have a <strong>lower daily charge but a higher price per kWh</strong>. Standard-user plans are the reverse.
+        So low-user plans suit homes that use less power, and standard-user plans suit bigger users. The <strong>break-even</strong> is the yearly kWh where both cost the same.
+        While the regulations apply, retailers have to price the two so they cost about the same at 8,000 kWh a year (Auckland).</p>
+      <div id="lfcNote" class="small"></div>
+      <div id="lowStdBody"></div>
+    </section>
+
+    <section class="card" id="compare">
+      <h2>Compare scenarios</h2>
+      <p class="muted small">Every saved scenario, costed with the current plan list and your preferences.</p>
+      <div class="table-wrap"><table id="scenarioTable"></table></div>
+    </section>
+
+    <section class="card" id="addplan">
+      <h2>Add a quote</h2>
+      <p class="small">Most retailers only show prices after you enter your address. Get a quote from the provider's site or
+        <a href="https://www.powerswitch.org.nz/" target="_blank" rel="noopener">Powerswitch</a>, then type the rates here.
+        Quotes are saved in this browser. Use <em>Export</em> to save them into <code>data/manual-plans.json</code> in the repo.</p>
+      <form id="planForm" class="grid">
+        <fieldset>
+          <legend>Plan</legend>
+          <label>Provider <input id="fProvider" list="providerList" required /></label>
+          <datalist id="providerList"></datalist>
+          <label>Plan name <input id="fName" required placeholder="e.g. Basic Low User" /></label>
+          <label>Fuel
+            <select id="fFuel"><option value="electricity">Electricity</option><option value="gas">Gas</option></select>
+          </label>
+          <label>User type
+            <select id="fUserType"><option value="low">Low user</option><option value="standard">Standard user</option><option value="any">n/a</option></select>
+          </label>
+          <label>Prices entered are
+            <select id="fGst"><option value="true">Incl. GST</option><option value="false">Excl. GST</option></select>
+          </label>
+          <label>Fixed term?
+            <select id="fTerm"><option value="">Unknown</option><option value="false">No</option><option value="true">Yes</option></select>
+          </label>
+        </fieldset>
+        <fieldset>
+          <legend>Rates</legend>
+          <label>Daily charge (c/day) <input id="fDaily" type="number" step="0.001" min="0" required /></label>
+          <label>Structure
+            <select id="fStructure">
+              <option value="anytime">Single anytime rate</option>
+              <option value="daynight">Day / night</option>
+              <option value="tou">Peak / off-peak / night</option>
+            </select>
+          </label>
+          <label data-r="anytime">Anytime (c/kWh) <input id="fAnytime" type="number" step="0.001" min="0" /></label>
+          <label data-r="day">Day (c/kWh) <input id="fDay" type="number" step="0.001" min="0" /></label>
+          <label data-r="peak">Peak (c/kWh) <input id="fPeak" type="number" step="0.001" min="0" /></label>
+          <label data-r="offpeak">Off-peak (c/kWh) <input id="fOffpeak" type="number" step="0.001" min="0" /></label>
+          <label data-r="night">Night (c/kWh) <input id="fNight" type="number" step="0.001" min="0" /></label>
+          <label class="inline"><input id="fFree" type="checkbox" /> Has free-power hours</label>
+          <label>Effective from (if stated) <input id="fEffective" type="date" /></label>
+          <label class="inline"><input id="fBoth" type="checkbox" /> Also enter the other user-type version</label>
+          <div id="otherVariant" hidden>
+            <p class="small muted" id="otherLabel"></p>
+            <label>Daily charge (c/day) <input id="f2Daily" type="number" step="0.001" min="0" /></label>
+            <label data-r="anytime">Anytime (c/kWh) <input id="f2Anytime" type="number" step="0.001" min="0" /></label>
+            <label data-r="day">Day (c/kWh) <input id="f2Day" type="number" step="0.001" min="0" /></label>
+            <label data-r="peak">Peak (c/kWh) <input id="f2Peak" type="number" step="0.001" min="0" /></label>
+            <label data-r="offpeak">Off-peak (c/kWh) <input id="f2Offpeak" type="number" step="0.001" min="0" /></label>
+            <label data-r="night">Night (c/kWh) <input id="f2Night" type="number" step="0.001" min="0" /></label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Discounts &amp; source</legend>
+          <label>Prompt-payment discount (%) <input id="fPrompt" type="number" step="0.1" min="0" max="50" /></label>
+          <label>Monthly credit ($, incl. GST) <input id="fCredit" type="number" step="0.01" min="0" /></label>
+          <label>Dual-fuel discount (%) <input id="fBundlePct" type="number" step="0.1" min="0" max="50" /></label>
+          <label>Dual-fuel credit ($/month) <input id="fBundleCredit" type="number" step="0.01" min="0" /></label>
+          <label>Source URL <input id="fUrl" type="url" required placeholder="https://…" /></label>
+          <label>Date retrieved <input id="fDate" type="date" required /></label>
+          <label>Notes <input id="fNotes" placeholder="conditions, smart meter needed…" /></label>
+        </fieldset>
+        <div class="row">
+          <button type="submit">Add quote</button>
+          <span id="formMsg" class="small"></span>
+        </div>
+      </form>
+      <h3>Your quotes</h3>
+      <div class="table-wrap"><table id="manualTable"></table></div>
+      <div class="row">
+        <button type="button" id="exportPlans" class="ghost">Export quotes (JSON)</button>
+        <label class="button ghost">Import JSON <input type="file" id="importPlans" accept="application/json" hidden /></label>
+      </div>
+    </section>
+
+    <section class="card" id="sources">
+      <h2>Data sources</h2>
+      <div id="networkInfo"></div>
+      <h3>Retailers checked</h3>
+      <div class="table-wrap"><table id="providerTable"></table></div>
+      <h3 id="all-sources">Every source used</h3>
+      <p class="small muted">Each URL the fetcher requested on the last refresh, its status and when it was retrieved (NZ time), plus the quotes you entered. Data more than 35 days old is flagged as stale.</p>
+      <div class="table-wrap"><table id="sourcesTable"></table></div>
+    </section>
+
+    <section class="card disclaimer">
+      <h2>Disclaimer</h2>
+      <p class="small">These are estimates only. Real bills depend on your exact address, meter type, the
+        retailer's terms, price changes, seasonal usage and when you use power. Rates in this app come only from your own bills, quotes you entered, and
+        Vector's published network charges. Always confirm with the retailer or Powerswitch before switching.</p>
+    </section>
+  </main>
+  <footer class="muted small">Prices in NZ dollars incl. 15% GST unless stated. Built for personal use.</footer>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,285 @@
+// Cost-calculation logic shared by the browser app and the Node tests. Pure functions, no DOM.
+// All money is NZ dollars; all rates are cents. Results are GST-inclusive.
+
+export const GST_RATE = 0.15;
+export const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+export const AVG_DAYS_PER_MONTH = 365 / 12;
+export const LOW_USER_THRESHOLD_KWH = 8000; // Auckland (upper North Island) threshold
+export const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+export const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
+
+/** Convert a cents value to GST-inclusive. */
+export function inclGst(cents, gstInclusive, gstRate = GST_RATE) {
+  return gstInclusive ? cents : cents * (1 + gstRate);
+}
+
+/**
+ * Split kWh across the rate buckets a plan has.
+ * shares: { night, peak, free } as fractions of total use (0..1). Remainder is day / off-peak.
+ * - anytime only: everything at the anytime rate
+ * - day/night: night share at night rate, rest at day rate
+ * - peak/off-peak(/night): peak share at peak, night share at night (if the plan has one), rest off-peak
+ * - plan.freeHours: the free share costs 0 (e.g. "free weekends" plans), applied before the split
+ * Returns { buckets: {rateKey: kWh}, freeKwh }
+ */
+export function splitUsage(rates, kwh, shares = {}, freeHours = false) {
+  const night = clamp01(shares.night ?? 0);
+  const peak = clamp01(shares.peak ?? 0);
+  const free = freeHours ? clamp01(shares.free ?? 0) : 0;
+  const freeKwh = kwh * free;
+  const rem = kwh - freeKwh;
+  const has = (k) => rates && rates[k] !== undefined && rates[k] !== null && rates[k] !== '';
+  const b = {};
+  if (has('peak')) {
+    const n = has('night') ? Math.min(night, 1) : 0;
+    const p = Math.min(peak, 1 - n);
+    if (has('night')) b.night = rem * n;
+    b.peak = rem * p;
+    const offKey = has('offpeak') ? 'offpeak' : has('day') ? 'day' : has('anytime') ? 'anytime' : 'peak';
+    b[offKey] = (b[offKey] || 0) + rem * (1 - n - p);
+  } else if (has('day') && has('night')) {
+    b.night = rem * night;
+    b.day = rem * (1 - night);
+  } else if (has('anytime')) {
+    b.anytime = rem;
+  } else if (has('day')) {
+    b.day = rem;
+  } else {
+    throw new Error('Plan has no usable variable rate');
+  }
+  return { buckets: b, freeKwh };
+}
+
+function clamp01(x) { return Math.max(0, Math.min(1, Number(x) || 0)); }
+
+/** Variable cost in cents (GST-inclusive) for one fuel of one plan. */
+export function variableCents(plan, kwh, shares, gstRate = GST_RATE) {
+  const { buckets } = splitUsage(plan.rates, kwh, shares, plan.freeHours);
+  let c = 0;
+  for (const [k, q] of Object.entries(buckets)) c += q * inclGst(Number(plan.rates[k]), plan.gstInclusive, gstRate);
+  return c;
+}
+
+/**
+ * Cost of one plan (single fuel) for one period. Returns dollars incl. GST, before bundle credits.
+ * opts.promptPay: apply prompt-payment discount if the plan offers one.
+ */
+export function periodCost(plan, { kwh, days }, shares, opts = {}, gstRate = GST_RATE) {
+  const fixed = days * inclGst(Number(plan.dailyCents), plan.gstInclusive, gstRate);
+  const variable = variableCents(plan, kwh, shares, gstRate);
+  let cents = fixed + variable;
+  const d = plan.discounts || {};
+  if (opts.promptPay !== false && d.promptPaymentPct) cents *= 1 - d.promptPaymentPct / 100;
+  const monthsInPeriod = days / AVG_DAYS_PER_MONTH;
+  let dollars = cents / 100 - (d.monthlyCreditDollars || 0) * monthsInPeriod;
+  return { fixed: fixed / 100, variable: variable / 100, total: dollars };
+}
+
+/**
+ * Build the 12 usage periods for a scenario.
+ * scenario.mode = 'average' -> 12 equal months of avg kWh, 365/12 days each
+ * scenario.mode = 'seasonal' -> scenario.months[i].elecKwh/gasKwh for each calendar month, real days
+ */
+export function usagePeriods(scenario) {
+  const out = [];
+  for (let i = 0; i < 12; i++) {
+    if (scenario.mode === 'seasonal' && Array.isArray(scenario.months) && scenario.months[i]) {
+      const m = scenario.months[i];
+      const days = DAYS_IN_MONTH[i];
+      out.push({ month: i + 1, days, elecKwh: Number(m.elecKwh) || 0, gasKwh: Number(m.gasKwh) || 0 });
+    } else {
+      out.push({ month: i + 1, days: AVG_DAYS_PER_MONTH, elecKwh: Number(scenario.elecKwh) || 0, gasKwh: Number(scenario.gasKwh) || 0 });
+    }
+  }
+  return out;
+}
+
+export function annualKwh(scenario) {
+  const p = usagePeriods(scenario);
+  return { elec: p.reduce((s, x) => s + x.elecKwh, 0), gas: p.reduce((s, x) => s + x.gasKwh, 0) };
+}
+
+/** Bundle (dual fuel) discount applies when electricity and gas plans share a bundleGroup. */
+export function isBundle(elecPlan, gasPlan) {
+  if (!elecPlan || !gasPlan) return false;
+  const a = elecPlan.bundleGroup || elecPlan.provider;
+  const b = gasPlan.bundleGroup || gasPlan.provider;
+  return a === b && !!(elecPlan.discounts?.bundle || gasPlan.discounts?.bundle);
+}
+
+function bundleTerms(elecPlan, gasPlan) {
+  const b = { pct: 0, monthlyCreditDollars: 0, dailyCreditCents: 0, gstInclusive: true };
+  for (const p of [elecPlan, gasPlan]) {
+    const x = p?.discounts?.bundle;
+    if (!x) continue;
+    b.pct = Math.max(b.pct, x.pct || 0);
+    b.monthlyCreditDollars = Math.max(b.monthlyCreditDollars, x.monthlyCreditDollars || 0);
+    b.dailyCreditCents = Math.max(b.dailyCreditCents, inclGst(x.dailyCreditCents || 0, p.gstInclusive));
+  }
+  return b;
+}
+
+/**
+ * Cost an offer (an electricity plan, optionally plus a gas plan) over a scenario.
+ * Returns { months: [{month, elec, gas, credit, total}], annual, monthlyAvg, warnings, bundle }
+ */
+export function costOffer({ elecPlan, gasPlan }, scenario, opts = {}) {
+  const shares = scenario.shares || {};
+  const periods = usagePeriods(scenario);
+  const bundle = isBundle(elecPlan, gasPlan) ? bundleTerms(elecPlan, gasPlan) : null;
+  const months = periods.map((p) => {
+    const e = elecPlan && p.elecKwh >= 0 ? periodCost(elecPlan, { kwh: p.elecKwh, days: p.days }, shares, opts) : null;
+    const g = gasPlan && p.gasKwh > 0 ? periodCost(gasPlan, { kwh: p.gasKwh, days: p.days }, shares, opts) : null;
+    let elec = e ? e.total : 0;
+    let gas = g ? g.total : 0;
+    let credit = 0;
+    if (bundle && e && g) {
+      credit += (elec + gas) * (bundle.pct / 100);
+      credit += bundle.monthlyCreditDollars * (p.days / AVG_DAYS_PER_MONTH);
+      credit += (bundle.dailyCreditCents * p.days) / 100;
+    }
+    return { month: p.month, days: p.days, elecKwh: p.elecKwh, gasKwh: p.gasKwh, elec: round2(elec), gas: round2(gas), credit: round2(credit), total: round2(elec + gas - credit), rawTotal: elec + gas - credit };
+  });
+  const annual = round2(months.reduce((s, m) => s + m.rawTotal, 0));
+  const warnings = [];
+  const kwh = annualKwh(scenario);
+  if (elecPlan?.userType === 'low' && kwh.elec > LOW_USER_THRESHOLD_KWH) warnings.push(`Low-user plans are for homes using up to ${LOW_USER_THRESHOLD_KWH.toLocaleString()} kWh a year; this scenario uses ${Math.round(kwh.elec).toLocaleString()} kWh.`);
+  if (elecPlan?.userType === 'standard' && kwh.elec <= LOW_USER_THRESHOLD_KWH) warnings.push('You may qualify for a low-user version of this plan.');
+  if (elecPlan && !planHasOnlyAnytime(elecPlan) && !scenario.sharesFromBills) warnings.push('Time-of-use estimate uses your assumed day/night/peak split.');
+  if (scenario.gasKwh > 0 && scenario.mode !== 'seasonal' && !gasPlan) warnings.push('No gas plan included.');
+  return { months, annual, monthlyAvg: round2(annual / 12), warnings, bundle: !!bundle };
+}
+
+export function planHasOnlyAnytime(p) {
+  const keys = Object.keys(p.rates || {}).filter((k) => p.rates[k] !== null && p.rates[k] !== undefined && p.rates[k] !== '');
+  return keys.length === 1 && keys[0] === 'anytime' && !p.freeHours;
+}
+
+/** Does a plan pass the user's preference filters? */
+export function passesPrefs(plan, prefs = {}) {
+  if (!plan) return true;
+  if (plan.isExample && !prefs.includeExamples) return false;
+  if (plan.fuel === 'electricity' && prefs.userType && prefs.userType !== 'any' && plan.userType !== 'any' && plan.userType !== prefs.userType) return false;
+  if (prefs.term === 'fixed' && plan.fixedTerm !== true) return false;
+  if (prefs.term === 'open' && plan.fixedTerm === true) return false;
+  if (prefs.pricing === 'anytime' && plan.fuel === 'electricity' && !planHasOnlyAnytime(plan)) return false;
+  if (prefs.pricing === 'tou' && plan.fuel === 'electricity' && planHasOnlyAnytime(plan)) return false;
+  return true;
+}
+
+/**
+ * Build and rank all offers.
+ * - Electricity-only users (no gas): one offer per electricity plan.
+ * - With gas: each electricity plan is paired with the cheapest gas plan for that scenario,
+ *   considering both the same provider (bundle discounts) and any other provider, unless
+ *   prefs.dualFuel === 'only' (same provider only) or 'separate' (ignore bundle pairing preference).
+ * The baseline (your current plan) is always included and flagged.
+ */
+export function rankOffers(plans, scenario, prefs = {}, baseline = null) {
+  const opts = { promptPay: prefs.promptPay !== false };
+  const elec = plans.filter((p) => p.fuel === 'electricity' && passesPrefs(p, prefs));
+  const gas = plans.filter((p) => p.fuel === 'gas' && passesPrefs(p, { ...prefs, userType: 'any', pricing: 'any' }));
+  // Your current plans can also be mixed with other providers ("keep current gas, switch power").
+  const others = elec.length + gas.length > 0;
+  if (baseline?.electricity && others) elec.push(baseline.electricity);
+  if (baseline?.gas && others) gas.push(baseline.gas);
+  const kwh = annualKwh(scenario);
+  const wantGas = kwh.gas > 0;
+  const offers = [];
+
+  const pairOptions = (e) => {
+    if (!wantGas) return [null];
+    let candidates = gas;
+    if (prefs.dualFuel === 'only') candidates = gas.filter((g) => (g.bundleGroup || g.provider) === (e.bundleGroup || e.provider));
+    return candidates;
+  };
+
+  for (const e of elec) {
+    if (baseline && e === baseline.electricity && !wantGas) continue; // identical to the baseline row
+    const opts2 = pairOptions(e);
+    if (wantGas && !opts2.length) {
+      if (prefs.dualFuel === 'only') continue;
+      offers.push(makeOffer(e, null, scenario, opts, true));
+      continue;
+    }
+    let best = null;
+    for (const g of opts2) {
+      if (baseline && e === baseline.electricity && g === baseline.gas) continue; // that's the baseline row
+      const o = makeOffer(e, g, scenario, opts);
+      if (!best || o.annual < best.annual) best = o;
+    }
+    if (best) offers.push(best);
+    else if (!(baseline && e === baseline.electricity)) offers.push(makeOffer(e, null, scenario, opts, wantGas));
+  }
+  if (baseline) {
+    const b = makeOffer(baseline.electricity, wantGas ? baseline.gas : null, scenario, opts);
+    b.isBaseline = true;
+    b.label = 'Your current plan (from your bills)';
+    offers.push(b);
+  }
+  offers.sort((a, b) => (a.incomplete === b.incomplete ? a.annual - b.annual : a.incomplete ? 1 : -1));
+  const base = offers.find((o) => o.isBaseline);
+  offers.forEach((o, i) => {
+    o.rank = i + 1;
+    if (base) o.vsBaselineAnnual = round2(o.annual - base.annual);
+  });
+  return offers;
+}
+
+function makeOffer(e, g, scenario, opts, missingGas = false) {
+  const r = costOffer({ elecPlan: e, gasPlan: g }, scenario, opts);
+  const providers = [...new Set([e?.provider, g?.provider].filter(Boolean))];
+  const nm = (p, what) => (p.source?.method === 'bill' ? `current ${what} (${p.provider})` : `${p.provider} ${what}`);
+  return {
+    id: [e?.id, g?.id].filter(Boolean).join('+'),
+    label: g ? (r.bundle ? `${e.provider} dual fuel` : `${nm(e, 'power')} + ${nm(g, 'gas')}`) : `${e.provider}${e.source?.method === 'bill' ? ' (current)' : ''}`,
+    providers, elecPlan: e, gasPlan: g, ...r,
+    incomplete: missingGas,
+    warnings: missingGas ? [...r.warnings, 'No gas plan matched: gas cost not included, so this total is not comparable.'] : r.warnings,
+  };
+}
+
+// ---------- low vs standard user ----------
+export const STALE_DAYS = 35;
+
+/** True if an ISO timestamp is more than `days` old (or missing/invalid). */
+export function isStale(iso, now = new Date(), days = STALE_DAYS) {
+  const t = Date.parse(iso);
+  if (Number.isNaN(t)) return true;
+  return (now.getTime() - t) / 86400000 > days;
+}
+
+/** Effective cents/kWh (GST-incl.) of a plan for a given usage split, ignoring daily charge. */
+export function effectiveRate(plan, shares = {}) {
+  return variableCents(plan, 1000, shares) / 1000;
+}
+
+/**
+ * Break-even annual kWh between a low-user and a standard-user variant:
+ *   365*dailyLow + k*rateLow = 365*dailyStd + k*rateStd  ->  k = 365*(dailyStd-dailyLow)/(rateLow-rateStd)
+ * Uses GST-inclusive cents and the scenario's usage split for time-of-use plans.
+ * Returns { breakEvenKwh|null, lowAnnual, stdAnnual, cheaper: 'low'|'standard'|'same', annualKwh }.
+ */
+export function compareLowStandard(lowPlan, stdPlan, scenario) {
+  const shares = scenario.shares || {};
+  const dl = inclGst(lowPlan.dailyCents, lowPlan.gstInclusive), ds = inclGst(stdPlan.dailyCents, stdPlan.gstInclusive);
+  const rl = effectiveRate(lowPlan, shares), rs = effectiveRate(stdPlan, shares);
+  const breakEvenKwh = rl > rs ? (365 * (ds - dl)) / (rl - rs) : null;
+  const lowAnnual = costOffer({ elecPlan: { ...lowPlan, discounts: {} } }, scenario).annual;
+  const stdAnnual = costOffer({ elecPlan: { ...stdPlan, discounts: {} } }, scenario).annual;
+  const diff = round2(stdAnnual - lowAnnual);
+  return { breakEvenKwh: breakEvenKwh && breakEvenKwh > 0 ? Math.round(breakEvenKwh) : null, lowAnnual, stdAnnual, diff, cheaper: Math.abs(diff) < 0.5 ? 'same' : diff > 0 ? 'low' : 'standard', annualKwh: Math.round(annualKwh(scenario).elec) };
+}
+
+/** Group electricity plans into low/standard pairs by variantGroup (or provider+name stem). */
+export function variantPairs(plans) {
+  const groups = new Map();
+  for (const p of plans.filter((x) => x.fuel === 'electricity' && (x.userType === 'low' || x.userType === 'standard'))) {
+    const key = p.variantGroup || `${p.provider}|${p.name.replace(/\b(low|standard)( user)?\b/gi, '').replace(/\s+/g, ' ').trim()}`;
+    if (!groups.has(key)) groups.set(key, { key, low: null, standard: null });
+    const g = groups.get(key);
+    if (!g[p.userType]) g[p.userType] = p;
+  }
+  return [...groups.values()];
+}

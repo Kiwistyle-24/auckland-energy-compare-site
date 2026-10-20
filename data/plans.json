@@ -1,0 +1,504 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-20T12:14:38.780Z",
+  "region": "Auckland (Vector electricity and gas networks)",
+  "gstRate": 0.15,
+  "notes": [
+    "Retail plan prices are only included when they come from a real source with a URL and date: currently your own bills (baseline, in my-usage.json) and quotes you enter manually (manual-plans.json or the app).",
+    "No Auckland retailer checked publishes a static rate card that can be fetched without an address/ICP lookup, so retail prices are not scraped. See providers[] for the reason per provider.",
+    "Vector network (lines) charges are fetched automatically from Vector's published pricing schedules. They are part of every retail price, not a plan you can buy.",
+    "Low-user (low fixed charge) plans are being phased out: see lowFixedCharge for the rule and its source."
+  ],
+  "networkCharges": {
+    "electricity": {
+      "network": "Vector (Auckland network)",
+      "effectiveFrom": "2026-04-01",
+      "gstInclusive": false,
+      "rows": [
+        {
+          "code": "ARHLC",
+          "userType": "low",
+          "meter": "tou",
+          "control": "controlled",
+          "dailyCentsExGst": 90,
+          "offpeakCentsExGst": 4.57,
+          "peakCentsExGst": 15.04
+        },
+        {
+          "code": "ARHLU",
+          "userType": "low",
+          "meter": "tou",
+          "control": "uncontrolled",
+          "dailyCentsExGst": 90,
+          "offpeakCentsExGst": 4.66,
+          "peakCentsExGst": 15.13
+        },
+        {
+          "code": "ARNLC",
+          "userType": "low",
+          "meter": "anytime",
+          "control": "controlled",
+          "dailyCentsExGst": 90,
+          "anytimeCentsExGst": 6.85
+        },
+        {
+          "code": "ARNLU",
+          "userType": "low",
+          "meter": "anytime",
+          "control": "uncontrolled",
+          "dailyCentsExGst": 90,
+          "anytimeCentsExGst": 6.94
+        },
+        {
+          "code": "ARHSC",
+          "userType": "standard",
+          "meter": "tou",
+          "control": "controlled",
+          "dailyCentsExGst": 190.2,
+          "offpeakCentsExGst": 0,
+          "peakCentsExGst": 10.47
+        },
+        {
+          "code": "ARHSU",
+          "userType": "standard",
+          "meter": "tou",
+          "control": "uncontrolled",
+          "dailyCentsExGst": 192.2,
+          "offpeakCentsExGst": 0,
+          "peakCentsExGst": 10.47
+        },
+        {
+          "code": "ARNSC",
+          "userType": "standard",
+          "meter": "anytime",
+          "control": "controlled",
+          "dailyCentsExGst": 190.2,
+          "anytimeCentsExGst": 2.28
+        },
+        {
+          "code": "ARNSU",
+          "userType": "standard",
+          "meter": "anytime",
+          "control": "uncontrolled",
+          "dailyCentsExGst": 192.2,
+          "anytimeCentsExGst": 2.28
+        }
+      ],
+      "source": {
+        "url": "https://media.vector.co.nz/production/documents/electricitypricescheduleseffectivefrom1april2026.pdf",
+        "page": "https://vector.co.nz/our-services/electricity/electricity-pricing",
+        "retrievedAt": "2026-10-20T12:14:38.780Z"
+      }
+    },
+    "gas": {
+      "network": "Vector gas distribution network (Auckland)",
+      "effectiveFrom": "2026-10-01",
+      "gstInclusive": false,
+      "rows": [
+        {
+          "code": "GA0R",
+          "dailyCentsExGst": 111.76,
+          "variableCentsExGst": 0
+        }
+      ],
+      "source": {
+        "url": "https://media.vector.co.nz/production/documents/gasdistributionpricescheduleeffective1oct2026.pdf",
+        "page": "https://vector.co.nz/our-services/gas/gas-pricing",
+        "retrievedAt": "2026-10-20T12:14:38.780Z"
+      }
+    }
+  },
+  "lowFixedCharge": {
+    "maxLowFixedChargeExGst": 180,
+    "capEffectiveFrom": "2026-04-01",
+    "regulationsRemovedFrom": "2027-04-01",
+    "lowUserThresholdKwh": 8000,
+    "summary": "Low-user daily charge capped at $1.80/day excl. GST from 1 April 2026. The regulations are removed on 1 April 2027, after which retailers no longer have to offer low-user plans. Low-user plans are for your main home using up to 8,000 kWh a year (Auckland).",
+    "checkedManually": {
+      "at": "2026-10-21T00:40:00+13:00",
+      "urls": [
+        "https://www.mbie.govt.nz/building-and-energy/energy-and-natural-resources/energy-generation-and-markets/electricity-market/electricity-industry-regulatory-framework/electricity-industry-regulations",
+        "https://www.legislation.govt.nz/regulation/public/2021/0391/latest/LMS600865.html"
+      ]
+    },
+    "autoVerified": false,
+    "source": {
+      "url": "https://www.mbie.govt.nz/building-and-energy/energy-and-natural-resources/energy-generation-and-markets/electricity-market/electricity-industry-regulatory-framework/electricity-industry-regulations",
+      "retrievedAt": "2026-10-21T00:40:00+13:00",
+      "method": "manual"
+    }
+  },
+  "plans": [],
+  "providers": [
+    {
+      "id": "contact",
+      "name": "Contact Energy",
+      "fuels": [
+        "electricity",
+        "gas"
+      ],
+      "url": "https://contact.co.nz/personal/all-plans",
+      "checkedAt": "2026-10-20T12:14:38.780Z",
+      "httpStatus": 200,
+      "status": "not_available_automatically",
+      "reason": "No public Auckland rate card on the page; prices need an address/ICP lookup. Rates depend on address, meter and plan; shown via the address check."
+    },
+    {
+      "id": "mercury",
+      "name": "Mercury",
+      "fuels": [
+        "electricity",
+        "gas"
+      ],
+      "url": "https://www.mercury.co.nz/electricity",
+      "checkedAt": "2026-10-20T12:14:38.780Z",
+      "httpStatus": 200,
+      "status": "not_available_automatically",
+      "reason": "No public Auckland rate card on the page; prices need an address/ICP lookup. Mercury publishes no regional rate card; rates are shown in the join flow / My Account."
+    },
+    {
+      "id": "genesis",
+      "name": "Genesis Energy",
+      "fuels": [
+        "electricity",
+        "gas"
+      ],
+      "url": "https://www.genesisenergy.co.nz/for-home/products/explore-pricing",
+      "checkedAt": "2026-10-20T12:14:38.780Z",
+      "httpStatus": 200,
+      "status": "not_available_automatically",
+      "reason": "No public Auckland rate card on the page; prices need an address/ICP lookup. Pricing page asks for your address. Your current Genesis rates come from your own bills (baseline row)."
+    },
+    {
+      "id": "meridian",
+      "name": "Meridian Energy",
+      "fuels": [
+        "electricity"
+      ],
+      "url": "https://www.meridianenergy.co.nz/for-home",
+      "checkedAt": "2026-10-20T12:14:38.780Z",
+      "httpStatus": 200,
+      "status": "not_available_automatically",
+      "reason": "No public Auckland rate card on the page; prices need an address/ICP lookup. Rates by address. Meridian rate-card documents live under /public/u-docs/, which robots.txt disallows."
+    },
+    {
+      "id": "electric-kiwi",
+      "name": "Electric Kiwi",
+      "fuels": [
+        "electricity"
+      ],
+      "url": "https://www.electrickiwi.co.nz/power/prices",
+      "checkedAt": "2026-10-20T12:14:38.780Z",
+      "httpStatus": 200,
+      "status": "not_available_automatically",
+      "reason": "No public Auckland rate card on the page; prices need an address/ICP lookup. Prices page says \"Enter your address to see your prices\" (JavaScript lookup)."
+    },
+    {
+      "id": "nova",
+      "name": "Nova Energy",
+      "fuels": [
+        "electricity",
+        "gas"
+      ],
+      "url": "https://www.novaenergy.co.nz/",
+      "checkedAt": "2026-10-20T12:14:38.780Z",
+      "httpStatus": 200,
+      "status": "not_available_automatically",
+      "reason": "No public Auckland rate card on the page; prices need an address/ICP lookup. Rates by address / quote."
+    },
+    {
+      "id": "powershop",
+      "name": "Powershop",
+      "fuels": [
+        "electricity"
+      ],
+      "url": "https://www.powershop.co.nz/",
+      "checkedAt": "2026-10-20T12:14:38.780Z",
+      "httpStatus": 200,
+      "status": "not_available_automatically",
+      "reason": "No public Auckland rate card on the page; prices need an address/ICP lookup. Rate cards live under /public/Ratecards/, which robots.txt disallows."
+    },
+    {
+      "id": "pulse",
+      "name": "Pulse Energy",
+      "fuels": [
+        "electricity",
+        "gas"
+      ],
+      "url": "https://pulseenergy.co.nz/price-info/",
+      "checkedAt": "2026-10-20T12:14:38.780Z",
+      "httpStatus": 200,
+      "status": "not_available_automatically",
+      "reason": "No public Auckland rate card on the page; prices need an address/ICP lookup. Price Plan page needs an account number; /_graphql is disallowed by robots.txt."
+    },
+    {
+      "id": "octopus",
+      "name": "Octopus Energy NZ",
+      "fuels": [
+        "electricity"
+      ],
+      "url": "https://octopusenergy.nz/",
+      "checkedAt": "2026-10-20T12:14:38.780Z",
+      "httpStatus": 200,
+      "status": "not_available_automatically",
+      "reason": "No public Auckland rate card on the page; prices need an address/ICP lookup. Rates via the Get Rates address lookup; /api/ is disallowed by robots.txt."
+    },
+    {
+      "id": "ecotricity",
+      "name": "Ecotricity",
+      "fuels": [
+        "electricity"
+      ],
+      "url": "https://ecotricity.co.nz/for-home",
+      "checkedAt": "2026-10-20T12:14:38.780Z",
+      "httpStatus": 200,
+      "status": "not_available_automatically",
+      "reason": "No public Auckland rate card on the page; prices need an address/ICP lookup. Rates shown during sign-up for your address."
+    },
+    {
+      "id": "2degrees",
+      "name": "2degrees (power)",
+      "fuels": [
+        "electricity"
+      ],
+      "url": "https://www.2degrees.nz/power",
+      "checkedAt": "2026-10-20T12:14:38.780Z",
+      "httpStatus": 200,
+      "status": "not_available_automatically",
+      "reason": "No public Auckland rate card on the page; prices need an address/ICP lookup. Rates by address during sign-up."
+    },
+    {
+      "id": "greypower",
+      "name": "Grey Power Electricity",
+      "fuels": [
+        "electricity"
+      ],
+      "url": "https://www.greypowerelectricity.co.nz/",
+      "checkedAt": "2026-10-20T12:14:38.780Z",
+      "httpStatus": 200,
+      "status": "not_available_automatically",
+      "reason": "No public Auckland rate card on the page; prices need an address/ICP lookup. Rates by address / quote."
+    },
+    {
+      "id": "globug",
+      "name": "GLOBUG (prepay, Mercury)",
+      "fuels": [
+        "electricity"
+      ],
+      "url": "https://www.globug.co.nz/pricing-calculator/",
+      "checkedAt": "2026-10-20T12:14:38.780Z",
+      "httpStatus": 200,
+      "status": "not_available_automatically",
+      "reason": "No public Auckland rate card on the page; prices need an address/ICP lookup. Pricing calculator uses an address lookup and reCAPTCHA. GLOBUG says it is pausing new joins."
+    },
+    {
+      "id": "paua",
+      "name": "Paua to the People",
+      "fuels": [
+        "electricity"
+      ],
+      "url": "https://www.pauatothepeople.co.nz/",
+      "checkedAt": "2026-10-20T12:14:38.780Z",
+      "httpStatus": 200,
+      "status": "not_available_automatically",
+      "reason": "No public Auckland rate card on the page; prices need an address/ICP lookup. Small retailer; rates by enquiry."
+    },
+    {
+      "id": "frank",
+      "name": "Frank Energy",
+      "fuels": [
+        "electricity"
+      ],
+      "url": "https://frankenergy.co.nz/checkyourplan",
+      "checkedAt": "2026-10-20T12:14:38.780Z",
+      "httpStatus": 200,
+      "status": "closed",
+      "reason": "Closed to new customers; customers were moved to Genesis."
+    },
+    {
+      "id": "flick",
+      "name": "Flick Electric",
+      "fuels": [
+        "electricity"
+      ],
+      "url": "https://www.flick.co.nz/",
+      "checkedAt": "2026-10-20T12:14:38.780Z",
+      "httpStatus": 200,
+      "status": "closed",
+      "reason": "flick.co.nz now belongs to an unrelated business; Flick Electric no longer appears to sell power."
+    }
+  ],
+  "comparators": [
+    {
+      "id": "powerswitch",
+      "name": "Powerswitch (Consumer NZ)",
+      "url": "https://www.powerswitch.org.nz/",
+      "note": "Independent comparison for your exact address. robots.txt disallows /api and /results, so it is not scraped. Use it manually and type the quotes into this app."
+    }
+  ],
+  "fetchErrors": [],
+  "sources": [
+    {
+      "url": "https://vector.co.nz/our-services/electricity/electricity-pricing",
+      "label": "Vector pricing page",
+      "retrievedAt": "2026-10-20T12:14:41.359Z",
+      "status": "ok",
+      "httpStatus": 200
+    },
+    {
+      "url": "https://media.vector.co.nz/production/documents/electricitypricescheduleseffectivefrom1april2026.pdf",
+      "label": "Vector pricing schedule (PDF)",
+      "retrievedAt": "2026-10-20T12:14:46.136Z",
+      "status": "ok",
+      "httpStatus": 200
+    },
+    {
+      "url": "https://vector.co.nz/our-services/gas/gas-pricing",
+      "label": "Vector pricing page",
+      "retrievedAt": "2026-10-20T12:14:46.757Z",
+      "status": "ok",
+      "httpStatus": 200
+    },
+    {
+      "url": "https://media.vector.co.nz/production/documents/gasdistributionpricescheduleeffective1oct2026.pdf",
+      "label": "Vector pricing schedule (PDF)",
+      "retrievedAt": "2026-10-20T12:14:47.868Z",
+      "status": "ok",
+      "httpStatus": 200
+    },
+    {
+      "url": "https://contact.co.nz/personal/all-plans",
+      "label": "Contact Energy pricing page",
+      "retrievedAt": "2026-10-20T12:14:49.881Z",
+      "status": "ok",
+      "httpStatus": 200
+    },
+    {
+      "url": "https://www.mercury.co.nz/electricity",
+      "label": "Mercury pricing page",
+      "retrievedAt": "2026-10-20T12:14:53.434Z",
+      "status": "ok",
+      "httpStatus": 200
+    },
+    {
+      "url": "https://www.genesisenergy.co.nz/for-home/products/explore-pricing",
+      "label": "Genesis Energy pricing page",
+      "retrievedAt": "2026-10-20T12:14:55.724Z",
+      "status": "ok",
+      "httpStatus": 200
+    },
+    {
+      "url": "https://www.meridianenergy.co.nz/for-home",
+      "label": "Meridian Energy pricing page",
+      "retrievedAt": "2026-10-20T12:15:00.185Z",
+      "status": "ok",
+      "httpStatus": 200
+    },
+    {
+      "url": "https://www.electrickiwi.co.nz/power/prices",
+      "label": "Electric Kiwi pricing page",
+      "retrievedAt": "2026-10-20T12:15:02.136Z",
+      "status": "ok",
+      "httpStatus": 200
+    },
+    {
+      "url": "https://www.novaenergy.co.nz/",
+      "label": "Nova Energy pricing page",
+      "retrievedAt": "2026-10-20T12:15:07.640Z",
+      "status": "ok",
+      "httpStatus": 200
+    },
+    {
+      "url": "https://www.powershop.co.nz/",
+      "label": "Powershop pricing page",
+      "retrievedAt": "2026-10-20T12:15:12.381Z",
+      "status": "ok",
+      "httpStatus": 200
+    },
+    {
+      "url": "https://pulseenergy.co.nz/price-info/",
+      "label": "Pulse Energy pricing page",
+      "retrievedAt": "2026-10-20T12:15:14.642Z",
+      "status": "ok",
+      "httpStatus": 200
+    },
+    {
+      "url": "https://octopusenergy.nz/",
+      "label": "Octopus Energy NZ pricing page",
+      "retrievedAt": "2026-10-20T12:15:16.206Z",
+      "status": "ok",
+      "httpStatus": 200
+    },
+    {
+      "url": "https://ecotricity.co.nz/for-home",
+      "label": "Ecotricity pricing page",
+      "retrievedAt": "2026-10-20T12:15:21.565Z",
+      "status": "ok",
+      "httpStatus": 200
+    },
+    {
+      "url": "https://www.2degrees.nz/power",
+      "label": "2degrees (power) pricing page",
+      "retrievedAt": "2026-10-20T12:15:23.693Z",
+      "status": "ok",
+      "httpStatus": 200
+    },
+    {
+      "url": "https://www.greypowerelectricity.co.nz/",
+      "label": "Grey Power Electricity pricing page",
+      "retrievedAt": "2026-10-20T12:15:25.688Z",
+      "status": "ok",
+      "httpStatus": 200
+    },
+    {
+      "url": "https://www.globug.co.nz/pricing-calculator/",
+      "label": "GLOBUG (prepay, Mercury) pricing page",
+      "retrievedAt": "2026-10-20T12:15:27.216Z",
+      "status": "ok",
+      "httpStatus": 200
+    },
+    {
+      "url": "https://www.pauatothepeople.co.nz/",
+      "label": "Paua to the People pricing page",
+      "retrievedAt": "2026-10-20T12:15:29.249Z",
+      "status": "ok",
+      "httpStatus": 200
+    },
+    {
+      "url": "https://frankenergy.co.nz/checkyourplan",
+      "label": "Frank Energy pricing page",
+      "retrievedAt": "2026-10-20T12:15:32.067Z",
+      "status": "ok",
+      "httpStatus": 200
+    },
+    {
+      "url": "https://www.flick.co.nz/",
+      "label": "Flick Electric pricing page",
+      "retrievedAt": "2026-10-20T12:15:33.621Z",
+      "status": "ok",
+      "httpStatus": 200
+    },
+    {
+      "url": "https://www.mbie.govt.nz/building-and-energy/energy-and-natural-resources/energy-generation-and-markets/electricity-market/electricity-industry-regulatory-framework/electricity-industry-regulations",
+      "label": "MBIE: low fixed charge regulations",
+      "retrievedAt": "2026-10-20T12:15:35.949Z",
+      "status": "failed",
+      "httpStatus": 200,
+      "note": "bot-protection page returned; not bypassed"
+    },
+    {
+      "url": "https://www.mbie.govt.nz/building-and-energy/energy-and-natural-resources/energy-generation-and-markets/electricity-market/electricity-industry-regulatory-framework/electricity-industry-regulations",
+      "label": "Low fixed charge rules (checked by hand)",
+      "retrievedAt": "2026-10-21T00:40:00+13:00",
+      "status": "manual",
+      "httpStatus": null
+    },
+    {
+      "url": "https://www.legislation.govt.nz/regulation/public/2021/0391/latest/LMS600865.html",
+      "label": "Low fixed charge rules (checked by hand)",
+      "retrievedAt": "2026-10-21T00:40:00+13:00",
+      "status": "manual",
+      "httpStatus": null
+    }
+  ]
+}
