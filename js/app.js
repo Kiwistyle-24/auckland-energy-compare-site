@@ -1,5 +1,6 @@
 import { rankOffers, annualKwh, MONTH_NAMES, round2, inclGst, AVG_DAYS_PER_MONTH, isStale, STALE_DAYS, compareLowStandard, variantPairs, costOffer } from './calc.js';
 import { validatePlan, validateUsageFile } from './schema.js';
+import { parseGenesisInvoice, mergeInvoices, InvoiceError } from './genesis-invoice.js';
 
 const LS = { state: 'aec.state.v1', scenarios: 'aec.scenarios.v1', manual: 'aec.manualPlans.v1', usage: 'aec.myUsage.v1' };
 // 'dev' when served by `npm run dev`; the public build (npm run build) rewrites this to 'public'.
@@ -46,9 +47,11 @@ async function init() {
   ]);
   DATA = plans || { plans: [], providers: [], networkCharges: {}, notes: [] };
   const stored = load(LS.usage, null);
-  if (devUsage) { USAGE = devUsage; USAGE_FROM = 'file'; }
-  else if (stored) { USAGE = stored; USAGE_FROM = 'browser'; }
+  // Bills you loaded in this browser win over the dev auto-load file.
+  if (stored) { USAGE = stored; USAGE_FROM = 'browser'; }
+  else if (devUsage) { USAGE = devUsage; USAGE_FROM = 'file'; }
   bindBills();
+  renderBillsSummary();
   state = load(LS.state, null) || billsScenario();
   state.prefs = { ...defaultPrefs(), ...(state.prefs || {}) };
   renderBanner();
@@ -151,10 +154,10 @@ function renderInputs() {
   [['segFuels', 'fuels', 'both'], ['segUser', 'userType', 'any']].forEach(([id, k, d]) => $(id).querySelectorAll('button').forEach((btn) => btn.setAttribute('aria-pressed', String(btn.dataset.v === (state.prefs[k] || d)))));
   $('sharesNote').textContent = USAGE?.default?.sharesNote || 'These shares are assumptions. Edit them to match your habits.';
   const u = USAGE;
-  const from = USAGE_FROM === 'file' ? ' (auto-loaded from data/my-usage.json, local dev mode)' : USAGE_FROM === 'browser' ? ' (loaded from your file, saved in this browser)' : '';
+  const from = USAGE_FROM === 'file' ? ' (auto-loaded from data/my-usage.json, local dev mode)' : USAGE_FROM === 'browser' ? (USAGE?.pdfImport ? ` (read from ${USAGE.pdfImport.invoices.length} PDF bill(s) in this browser, saved here only)` : ' (loaded from your file, saved in this browser)') : '';
   $('usageSource').innerHTML = u
     ? (u.isPlaceholder ? '⚠ <strong>Placeholder usage</strong>: fill in my-usage.json from your bills.' : `"My bills" uses figures from your ${esc(u.provider || 'energy')} bills${from}. ${esc(u.coverage?.months || '')}`)
-    : '<strong>No bills file loaded.</strong> Click <em>Load my bills file</em> to use your own usage and current plan, or type your usage below.';
+    : '<strong>No bills file loaded.</strong> Click <em>Load my bills</em> (your Genesis PDF bills or a my-usage.json file) to use your own usage and current plan, or type your usage below.';
   $('forgetBills').hidden = USAGE_FROM !== 'browser';
   // seasonal table
   const t = $('seasonalTable');
@@ -246,7 +249,7 @@ function renderResults() {
   renderBaselineCheck();
 
   const bestEl = $('best');
-  if (!offers.length || (a.elec + a.gas === 0)) bestEl.innerHTML = 'Enter your usage above (or click <strong>Load my bills file</strong>) to see real annual costs. With zero usage only the daily charges are counted.';
+  if (!offers.length || (a.elec + a.gas === 0)) bestEl.innerHTML = 'Enter your usage above (or click <strong>Load my bills</strong>) to see real annual costs. With zero usage only the daily charges are counted.';
   else if (!openAlternatives.length) {
     const cheaperClosed = comparable.filter((o) => o.closed && base && o.annual < base.annual);
     bestEl.innerHTML = `${base ? `<div>Your current plan costs about <span class="big">${money0(base.annual)}</span> a year (${money(base.monthlyAvg)} a month on average).</div>` : ''}
@@ -555,32 +558,175 @@ function renderSourcesTable() {
     <tr><td class="small">Your energy bills</td><td class="small muted">no URL. Usage and current-plan rates come from your my-usage.json file (loaded in your browser; not part of this site)</td><td class="small"><span class="tag manual">manual</span></td><td class="small">${USAGE?.currentPlan?.electricity?.source?.retrievedAt ? 'latest bill ' + fmtDate(USAGE.currentPlan.electricity.source.retrievedAt) : '—'}</td></tr></tbody>`;
 }
 
-// ---------- your bills file (kept in this browser only) ----------
-function useBills(obj) {
+// ---------- your bills (Genesis PDFs or a my-usage.json file), kept in this browser only ----------
+function useBills(obj, msg = '✔ Bills file loaded and saved in this browser.') {
   const errs = validateUsageFile(obj);
-  if (errs.length) throw new Error(errs.slice(0, 6).join('\n'));
+  if (errs.length) throw new InvoiceError(`The bill figures did not pass the checks (${errs.slice(0, 4).join('; ')}).`, 'invalid');
   save(LS.usage, obj);
   USAGE = obj; USAGE_FROM = 'browser';
   state = billsScenario();
-  $('billsMsg').textContent = '✔ Bills file loaded and saved in this browser.';
+  showBillsMsg([{ text: msg }]);
   $('pasteBox').hidden = true;
-  changed(true); renderBanner(); renderSources();
+  changed(true); renderBanner(); renderSources(); renderBillsSummary();
 }
-function bindBills() {
-  $('loadBills').addEventListener('change', async (e) => {
-    const f = e.target.files[0]; if (!f) return;
-    try { useBills(JSON.parse(await f.text())); } catch (err) { alert('Could not load that file:\n' + err.message); }
-    e.target.value = '';
+
+function showBillsMsg(items) {
+  $('billsMsg').innerHTML = items.length ? `<ul>${items.map((m) => `<li class="${m.bad ? 'bad' : m.warn ? 'warn' : ''}">${esc(m.text)}</li>`).join('')}</ul>` : '';
+}
+
+const startsWithPdf = (buf) => /%PDF-/.test(new TextDecoder('latin1').decode(new Uint8Array(buf.slice(0, 1024))));
+const looksJson = (f, buf) => /\.json$/i.test(f.name) || /json/i.test(f.type) || /^\s*[{[]/.test(new TextDecoder().decode(new Uint8Array(buf.slice(0, 64))));
+
+/** Read the chosen / dropped files: Genesis PDF bills (parsed here, in the browser) and/or a my-usage.json file. */
+async function importBillFiles(files) {
+  files = [...files];
+  if (!files.length) return;
+  const msgs = [], parsed = [];
+  let json = null;
+  showBillsMsg([{ text: `Reading ${files.length} file(s) in this browser…` }]);
+  for (const f of files) {
+    let buf;
+    try { buf = await f.arrayBuffer(); } catch { msgs.push({ bad: true, text: `${f.name}: the file could not be opened.` }); continue; }
+    if (startsWithPdf(buf)) {
+      try {
+        const { pdfPages } = await import('./pdf-text.js');
+        parsed.push({ name: f.name, inv: parseGenesisInvoice(await pdfPages(buf)) });
+      } catch (e) {
+        msgs.push({ bad: true, text: `${f.name}: ${e instanceof InvoiceError ? e.message : 'this PDF could not be read as a Genesis Energy bill.'}` });
+      }
+    } else if (looksJson(f, buf)) {
+      let obj;
+      try { obj = JSON.parse(new TextDecoder().decode(buf)); } catch { msgs.push({ bad: true, text: `${f.name}: this is not a valid bills JSON file (it could not be read as JSON). Choose your Genesis PDF bills or a my-usage.json file.` }); continue; }
+      const errs = validateUsageFile(obj);
+      if (errs.length) { msgs.push({ bad: true, text: `${f.name}: this JSON file is not a my-usage.json bills file (${errs.slice(0, 3).join('; ')}).` }); continue; }
+      json = { name: f.name, obj };
+    } else {
+      msgs.push({ bad: true, text: `${f.name}: not a PDF or JSON file. Choose your Genesis Energy PDF bills or a my-usage.json file.` });
+    }
+  }
+  try {
+    if (parsed.length) {
+      const prev = USAGE_FROM === 'browser' && USAGE?.pdfImport ? USAGE.pdfImport : null;
+      const known = new Set((prev?.invoices || []).map((x) => x.key));
+      const newKeys = new Set(parsed.map((p) => p.inv.key).filter((k) => !known.has(k)));
+      const skipped = parsed.length - newKeys.size;
+      const u = mergeInvoices([...(prev?.invoices || []), ...parsed.map((p) => p.inv)], { overrides: prev?.overrides });
+      const n = u.pdfImport.invoices.length, t = u.pdfImport.twelveMonthTotals;
+      const ok = [{ text: `✔ Read ${parsed.length} Genesis bill PDF(s)${prev ? `, merged with the ${prev.invoices.length} already in this browser` : ''}: ${n} bill(s) in use${skipped ? `, ${skipped} repeated bill(s) skipped` : ''}. Electricity ${u.coverage.electricity || 'not on these bills'}; gas ${u.coverage.gas || 'not on these bills'}. 12-month usage: ${t.elecKwh.toLocaleString()} kWh electricity, ${t.gasKwh.toLocaleString()} kWh gas. Saved in this browser only.` }];
+      if (json) ok.push({ warn: true, text: `${json.name}: ignored, because PDF bills were chosen at the same time.` });
+      for (const p of parsed) for (const w of p.inv.warnings) ok.push({ warn: true, text: `⚠ ${p.name}: ${w}. Check the figures below.` });
+      useBills(u, '');
+      showBillsMsg([...ok, ...msgs]);
+      $('billsSummary').open = true;
+      return;
+    }
+    if (json) { useBills(json.obj, ''); showBillsMsg([{ text: `✔ ${json.name} loaded and saved in this browser.` }, ...msgs]); return; }
+  } catch (e) {
+    msgs.push({ bad: true, text: e instanceof InvoiceError ? e.message : 'Your bills could not be combined. Please check the files and try again.' });
+  }
+  showBillsMsg(msgs.length ? msgs : [{ bad: true, text: 'Nothing was loaded.' }]);
+}
+
+const fmtC = (c) => (c == null ? '–' : `${Number(c).toFixed(2)}c`);
+const inclC = (c) => (c == null ? '' : ` (${(c * 1.15).toFixed(2)}c incl. GST)`);
+
+/** Table of what was read from each PDF bill, with editable kWh, include/exclude, and current-plan rates. */
+function renderBillsSummary() {
+  const box = $('billsSummary'), body = $('billsSummaryBody');
+  const imp = USAGE_FROM === 'browser' ? USAGE?.pdfImport : null;
+  if (!imp) { box.hidden = true; body.innerHTML = ''; return; }
+  box.hidden = false;
+  const rows = [];
+  imp.invoices.forEach((inv, i) => {
+    for (const fuel of ['electricity', 'gas']) {
+      const f = inv.fuels[fuel]; if (!f) continue;
+      const credits = fuel === 'electricity' ? (inv.credits || []).map((c) => `${c.label} $${c.amountInclGst.toFixed(2)} cr`) : [];
+      const disc = [...f.discounts.map((d) => `${d.label} ${d.pct}%`), ...credits].join('; ') || '–';
+      rows.push(`<tr><td>${esc(fmtDate(inv.statementDate))}</td><td>${fuel === 'electricity' ? 'Electricity' : 'Gas'}</td>
+        <td>${esc(f.start || '?')} to ${esc(f.end || '?')}</td><td class="num">${f.days ?? '–'}</td>
+        <td class="num"><input type="number" min="0" step="1" data-inv="${i}" data-fuel="${fuel}" class="kwhEdit" value="${f.kwhEdited ?? f.kwh}" aria-label="kWh"/>${f.kwhEdited != null ? ` <span class="tag">edited (bill: ${f.kwh})</span>` : ''}${f.gasVolumeM3 != null ? `<br><span class="muted">${f.gasVolumeM3} m³ → ${f.gasKwhFromVolume} kWh</span>` : ''}</td>
+        <td class="small">${f.unitLines.map((u) => `${esc(u.label)}: ${u.kwh} kWh @ ${fmtC(u.cents)}/kWh`).join('<br>')}<br>${f.dailyLines.map((d) => `${esc(d.label)}: ${d.days} days @ ${fmtC(d.cents)}/day`).join('<br>')}<br><span class="muted">${f.gstBasis === 'excl' ? 'rates excl. GST (15% GST added on the bill)' : 'GST basis not confirmed'}</span></td>
+        <td class="small">${esc(disc)}</td>
+        <td class="num">$${(f.netInclGst ?? 0).toFixed(2)}</td>
+        <td><input type="checkbox" class="useEdit" data-inv="${i}" data-fuel="${fuel}" ${inv.excluded?.[fuel] ? '' : 'checked'} aria-label="use this bill"/></td></tr>`);
+    }
   });
+  const cp = USAGE.currentPlan || {};
+  const field = (id, label, v, step = '0.01') => `<label>${label}<input type="number" min="0" step="${step}" id="${id}" value="${v ?? ''}"/></label>`;
+  const e = cp.electricity, g = cp.gas;
+  const credit = e?.discounts?.bundle?.monthlyCreditDollars ?? g?.discounts?.bundle?.monthlyCreditDollars ?? 0;
+  body.innerHTML = `
+    <p class="small">${imp.invoices.length} bill(s) in use${imp.duplicatesSkipped ? `, ${imp.duplicatesSkipped} repeated bill(s) skipped` : ''}${imp.overlaps?.length ? `; ${imp.overlaps.length} overlapping period(s): the later bill was used for the overlapping days` : ''}.
+      Electricity: ${esc(USAGE.coverage?.electricity || 'none')}. Gas: ${esc(USAGE.coverage?.gas || 'none')}. ${esc(USAGE.coverage?.months || '')}
+      12-month usage: <strong>${imp.twelveMonthTotals.elecKwh.toLocaleString()} kWh</strong> electricity, <strong>${imp.twelveMonthTotals.gasKwh.toLocaleString()} kWh</strong> gas.</p>
+    <div class="table-wrap"><table><thead><tr><th>Bill date</th><th>Fuel</th><th>Period</th><th class="num">Days</th><th class="num">kWh</th><th>Plan lines and rates</th><th>Discounts / credits</th><th class="num">Charged</th><th>Use</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>
+    <h4>Your current plan (from your latest bill${e?.source?.retrievedAt ? `, ${esc(fmtDate(e.source.retrievedAt))}` : ''}; excl. GST as printed)</h4>
+    <div class="plan-edit">
+      ${e ? `<strong>${esc(e.name)}</strong>${field('cpEDaily', 'Electricity daily (c/day)', e.dailyCents)}${Object.entries(e.rates).map(([k, v]) => field(`cpERate-${k}`, `Electricity ${k} (c/kWh)`, v)).join('')}` : '<span class="muted">No electricity on these bills.</span>'}
+    </div>
+    <div class="plan-edit">
+      ${g ? `<strong>${esc(g.name)}</strong>${field('cpGDaily', 'Gas daily (c/day)', g.dailyCents)}${field('cpGRate', 'Gas (c/kWh)', g.rates.anytime)}` : '<span class="muted">No gas on these bills.</span>'}
+      ${field('cpCredit', 'Monthly bundle credit ($ incl. GST)', credit)}
+    </div>
+    <p class="small muted">Rates incl. GST: ${e ? `electricity ${fmtC(e.rates.anytime ?? Object.values(e.rates)[0])}/kWh${inclC(e.rates.anytime ?? Object.values(e.rates)[0])}, ${fmtC(e.dailyCents)}/day${inclC(e.dailyCents)}` : ''}${g ? `; gas ${fmtC(g.rates.anytime)}/kWh${inclC(g.rates.anytime)}, ${fmtC(g.dailyCents)}/day${inclC(g.dailyCents)}` : ''}.</p>
+    <button type="button" id="applyBillEdits">Apply changes</button> <button type="button" id="undoBillEdits" class="ghost">Undo my edits</button>`;
+  $('applyBillEdits').addEventListener('click', applyBillEdits);
+  $('undoBillEdits').addEventListener('click', () => {
+    const invoices = imp.invoices.map((inv) => ({ ...inv, excluded: undefined, fuels: Object.fromEntries(Object.entries(inv.fuels).map(([k, f]) => [k, { ...f, kwhEdited: undefined }])) }));
+    rebuildFromInvoices(invoices, {}, '✔ Your edits were undone; figures are as read from the bills.');
+  });
+}
+
+function rebuildFromInvoices(invoices, overrides, msg) {
+  try { useBills(mergeInvoices(invoices, { overrides }), msg); $('billsSummary').open = true; }
+  catch (e) { showBillsMsg([{ bad: true, text: e instanceof InvoiceError ? e.message : 'Those changes could not be applied.' }]); }
+}
+
+function applyBillEdits() {
+  const imp = USAGE.pdfImport;
+  const invoices = imp.invoices.map((inv) => ({ ...inv, excluded: { ...(inv.excluded || {}) }, fuels: Object.fromEntries(Object.entries(inv.fuels).map(([k, f]) => [k, { ...f }])) }));
+  document.querySelectorAll('#billsSummaryBody .kwhEdit').forEach((el) => {
+    const f = invoices[+el.dataset.inv].fuels[el.dataset.fuel]; const v = Number(el.value);
+    f.kwhEdited = el.value !== '' && Number.isFinite(v) && v >= 0 && v !== f.kwh ? v : undefined;
+  });
+  document.querySelectorAll('#billsSummaryBody .useEdit').forEach((el) => { invoices[+el.dataset.inv].excluded[el.dataset.fuel] = !el.checked || undefined; });
+  const base = mergeInvoices(invoices, {}).currentPlan; // as read from the bills
+  const num = (id) => { const el = $(id); return el && el.value !== '' && Number(el.value) >= 0 ? Number(el.value) : null; };
+  const overrides = {};
+  const set = (fuel, key, v, was) => { if (v != null && v !== was) (overrides[fuel] ||= {})[key] = v; };
+  if (base.electricity) {
+    set('electricity', 'dailyCents', num('cpEDaily'), base.electricity.dailyCents);
+    const rates = {};
+    for (const k of Object.keys(base.electricity.rates)) { const v = num(`cpERate-${k}`); if (v != null && v !== base.electricity.rates[k]) rates[k] = v; }
+    if (Object.keys(rates).length) (overrides.electricity ||= {}).rates = rates;
+  }
+  if (base.gas) {
+    set('gas', 'dailyCents', num('cpGDaily'), base.gas.dailyCents);
+    const v = num('cpGRate'); if (v != null && v !== base.gas.rates.anytime) (overrides.gas ||= {}).rates = { anytime: v };
+  }
+  const credit = num('cpCredit'), wasCredit = base.electricity?.discounts?.bundle?.monthlyCreditDollars ?? base.gas?.discounts?.bundle?.monthlyCreditDollars ?? 0;
+  if (credit != null && credit !== wasCredit) for (const f of ['electricity', 'gas']) if (base[f]) (overrides[f] ||= {}).monthlyCreditDollars = credit;
+  rebuildFromInvoices(invoices, overrides, '✔ Your changes were applied and saved in this browser.');
+}
+
+function bindBills() {
+  $('loadBills').addEventListener('change', async (e) => { await importBillFiles(e.target.files); e.target.value = ''; });
+  const drop = $('billsDrop');
+  const hasFiles = (e) => [...(e.dataTransfer?.types || [])].includes('Files');
+  document.addEventListener('dragover', (e) => { if (hasFiles(e)) { e.preventDefault(); drop.classList.add('dragover'); } });
+  document.addEventListener('dragleave', (e) => { if (!e.relatedTarget) drop.classList.remove('dragover'); });
+  document.addEventListener('drop', (e) => { if (!hasFiles(e)) return; e.preventDefault(); drop.classList.remove('dragover'); importBillFiles(e.dataTransfer.files); });
   $('pasteBillsBtn').addEventListener('click', () => { $('pasteBox').hidden = !$('pasteBox').hidden; if (!$('pasteBox').hidden) $('pasteBills').focus(); });
   $('pasteBillsLoad').addEventListener('click', () => {
-    try { useBills(JSON.parse($('pasteBills').value)); $('pasteBills').value = ''; } catch (err) { alert('Could not read the pasted JSON:\n' + err.message); }
+    let obj;
+    try { obj = JSON.parse($('pasteBills').value); } catch { showBillsMsg([{ bad: true, text: 'The pasted text is not valid JSON. Paste the whole contents of your my-usage.json file.' }]); return; }
+    try { useBills(obj); $('pasteBills').value = ''; } catch (err) { showBillsMsg([{ bad: true, text: err instanceof InvoiceError ? err.message : 'The pasted JSON could not be used.' }]); }
   });
   $('forgetBills').addEventListener('click', () => {
     if (!confirm('Remove your bills data (usage and current plan) from this browser? Saved scenarios and quotes are kept.')) return;
     localStorage.removeItem(LS.usage); localStorage.removeItem(LS.state);
     USAGE = null; USAGE_FROM = null; state = billsScenario();
-    $('billsMsg').textContent = 'Removed.';
-    changed(true); renderBanner(); renderSources();
+    showBillsMsg([{ text: 'Removed your bills from this browser.' }]);
+    changed(true); renderBanner(); renderSources(); renderBillsSummary();
   });
 }

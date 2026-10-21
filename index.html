@@ -31,19 +31,24 @@
         </div>
       </div>
       <p id="usageSource" class="muted small"></p>
-      <div class="row bills-bar">
-        <label class="button">Load my bills file <input type="file" id="loadBills" accept=".json,application/json" hidden /></label>
+      <div class="row bills-bar" id="billsDrop">
+        <label class="button">Load my bills (Genesis PDFs or JSON) <input type="file" id="loadBills" accept=".pdf,.json,application/pdf,application/json" multiple hidden /></label>
         <button type="button" id="pasteBillsBtn" class="ghost">Paste JSON</button>
         <button type="button" id="forgetBills" class="ghost">Remove my bills from this browser</button>
-        <span id="billsMsg" class="small"></span>
+        <span class="small muted drop-hint">or drop your bill PDFs here (you can pick several at once)</span>
       </div>
+      <div id="billsMsg" class="small" role="status" aria-live="polite"></div>
       <div id="pasteBox" hidden>
         <label>Paste the contents of your <code>my-usage.json</code>
           <textarea id="pasteBills" rows="6" spellcheck="false"></textarea>
         </label>
         <button type="button" id="pasteBillsLoad">Load pasted JSON</button>
       </div>
-      <p class="small muted">🔒 Your bills file is read and kept <strong>only in this browser</strong> (localStorage). It is never uploaded, and this public site contains no personal data.</p>
+      <details id="billsSummary" hidden>
+        <summary>What was read from your bills (check and edit)</summary>
+        <div id="billsSummaryBody"></div>
+      </details>
+      <p class="small muted">🔒 Your bills (PDF or JSON) are read and kept <strong>only in this browser</strong> (PDFs are read with this site's own copy of pdf.js; the figures go into localStorage). Nothing is uploaded, and this public site contains no personal data.</p>
 
       <div class="grid">
         <fieldset>

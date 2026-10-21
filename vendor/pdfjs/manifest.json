@@ -1,0 +1,23 @@
+{
+  "package": "pdfjs-dist",
+  "version": "4.10.38",
+  "license": "Apache-2.0",
+  "note": "Unmodified upstream files, served by this site (no CDN). Regenerate with npm run vendor-pdfjs.",
+  "files": {
+    "pdf.min.js": {
+      "upstream": "pdfjs-dist@4.10.38/legacy/build/pdf.min.mjs",
+      "sha256": "44ec6f011027ee77791386b66c14876a5fc29e20bf0433c07c6726fff7212b72",
+      "bytes": 398237
+    },
+    "pdf.worker.min.js": {
+      "upstream": "pdfjs-dist@4.10.38/legacy/build/pdf.worker.min.mjs",
+      "sha256": "bd88805178a26c729db8c0107a5b630cb900ec070f4d8c7529a3e45530afd41d",
+      "bytes": 1417586
+    },
+    "LICENSE": {
+      "upstream": "pdfjs-dist@4.10.38/LICENSE",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "bytes": 10174
+    }
+  }
+}

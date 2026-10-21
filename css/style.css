@@ -88,3 +88,12 @@ details.charts { margin-top:1rem; } details > summary { cursor:pointer; font-wei
   .scenario-bar { width:100%; } .scenario-bar label { flex:1 1 100%; }
   button, .button { min-height:40px; }
 }
+
+/* bills import */
+.bills-bar.dragover { outline:2px dashed var(--brand); outline-offset:4px; background:#f7fbf9; }
+#billsMsg ul { margin:.3rem 0; padding-left:1.2rem; }
+#billsMsg .bad { color:#a12; }
+#billsSummary { margin:.5rem 0; }
+#billsSummary table input[type=number] { width:6.5rem; }
+#billsSummary .plan-edit { display:flex; flex-wrap:wrap; gap:.6rem 1rem; margin:.5rem 0; }
+#billsSummary .plan-edit label { display:flex; flex-direction:column; font-size:.85rem; }
