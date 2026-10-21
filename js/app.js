@@ -315,7 +315,7 @@ function renderBaselineCheck() {
   const m = (DATA.plans || []).find((p) => p.fuel === 'electricity' && p.userType === b.userType && same(inclGst(p.dailyCents, p.gstInclusive), bi(b.dailyCents))
     && Object.keys(b.rates).length === Object.keys(p.rates).length && Object.entries(b.rates).every(([k, v]) => p.rates[k] !== undefined && same(inclGst(p.rates[k], p.gstInclusive), bi(v))));
   el.innerHTML = m
-    ? `<div class="rec small">✔ <strong>Bill check:</strong> your current electricity rates (${(bi(b.dailyCents) / 100).toFixed(2)} $/day + ${Object.values(b.rates).map((v) => bi(v).toFixed(2) + 'c/kWh').join(', ')} incl. GST) exactly match <strong>${esc(m.provider)} – ${esc(m.name)} (${esc(m.userType)} user)</strong> as published on <a href="${esc(m.source.url)}" target="_blank" rel="noopener">${esc(shortUrl(m.source.url))}</a> (retrieved ${fmtDateTime(m.source.retrievedAt)}).</div>`
+    ? `<div class="rec small">✔ <strong>Bill check:</strong> your current electricity rates (${(bi(b.dailyCents) / 100).toFixed(2)} $/day + ${Object.values(b.rates).map((v) => bi(v).toFixed(2) + 'c/kWh').join(', ')} incl. GST) exactly match <strong>${esc(m.provider)} – ${esc(m.name)} (${esc(m.userType)} user)</strong> ${m.source.method === 'snapshot' ? 'in its quote snapshot from' : 'as published on'} <a href="${esc(m.source.url)}" target="_blank" rel="noopener">${esc(shortUrl(m.source.url))}</a> (retrieved ${fmtDateTime(m.source.retrievedAt)}${m.source.method === 'snapshot' ? '; no longer fetched automatically' : ''}).</div>`
     : `<div class="rec small warnbox">⚠ <strong>Bill check:</strong> no published retailer plan matches the rates on your bill exactly. Your retailer may have changed prices since that bill, or doesn't publish them.</div>`;
 }
 

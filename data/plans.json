@@ -6,11 +6,11 @@
   "notes": [
     "Retail prices come ONLY from retailers' own websites (fetched automatically, with URL and retrieval time), your own bills (current plan), or quotes you type in from a retailer's site. Comparison sites are never used as a price source.",
     "All prices are stored GST-inclusive. Prices published excluding GST are converted by adding 15%.",
-    "Most Auckland retailers show prices only after an address / ICP lookup. Where the retailer's own public quote page allows it, that lookup is run for one Vector-network Auckland property (rates stored as \"Vector network, Auckland\"; the address itself is never stored here). Retailers whose lookup needs a login, personal details, or is blocked by robots.txt are listed as \"needs manual quote\" with the reason and their quote page.",
+    "Most Auckland retailers show prices only after an address / ICP lookup. Prices are read only from ordinary public pages and published files a visitor would load; where the retailer's own public price page for the property is an ordinary HTML page (Meridian), it is read for one Vector-network Auckland property (rates stored as \"Vector network, Auckland\"; the address itself is never stored here). A quote app's internal (undocumented) API, session IDs issued by it, or keys copied from page scripts are never used. Retailers whose quote needs one of those, a login, personal details, or is blocked by robots.txt are listed as \"needs manual quote\" with the reason and their quote page.",
     "Retailers closed to new customers are listed (with the reason) but their plans are never ranked.",
     "Vector network (lines) charges are included as context only: they are part of every retail price, not a plan you can buy.",
     "Low-user (low fixed charge) plans are being phased out: see lowFixedCharge for the rule and its source.",
-    "Contact Energy: live quote disabled (its quote API needs an API key copied from its join-page script, not an allowed method). Its plans are a dated quote snapshot from 21 Oct 2026, flagged stale after 35 days."
+    "Quote snapshots (live quote disabled; shown as \"quote snapshot\" and flagged stale after 35 days; get a manual quote): Genesis Energy (12 plans, retrieved 21 Oct 2026), Contact Energy (4 plans, retrieved 21 Oct 2026), Mercury (9 plans, retrieved 21 Oct 2026), Powershop (2 plans, retrieved 21 Oct 2026)."
   ],
   "networkCharges": {
     "electricity": {
@@ -166,18 +166,19 @@
         "Offer: HOME PH, Elec, 50 PSH.",
         "Terms: https://www.genesisenergy.co.nz/terms/powerhome-plan-terms https://www.genesisenergy.co.nz/offer-terms/power-shout-terms",
         "Genesis quote gives rates both excl. and incl. GST; the incl. GST rate is used.",
-        "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans."
+        "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans.",
+        "Quote snapshot: Genesis Energy's live quote is no longer fetched automatically. Confirm current rates with Genesis Energy before switching."
       ],
       "effectiveFrom": null,
       "effectiveNote": "No \"effective from\" date in Genesis's quote; rates are those quoted on the retrieval date.",
       "source": {
-        "method": "automatic",
+        "method": "snapshot",
         "url": "https://www.genesisenergy.co.nz/join",
         "retrievedAt": "2026-10-21T02:19:41.194Z",
-        "label": "Genesis Energy: \"Find your rates\" quote for the property (electricity)",
-        "endpoint": "https://www.genesisenergy.co.nz/api/npa/proxy/online/pricing/getOffers"
+        "label": "Genesis Energy: quote snapshot (live quote lookup disabled)"
       },
-      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up)."
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
+      "snapshot": true
     },
     {
       "id": "genesis-powerhomeps50-standard",
@@ -212,18 +213,19 @@
         "Dual fuel: $10 monthly credit when you combine electricity and piped gas (Genesis Home Bundle Rewards, on PowerHome).",
         "Offer: HOME PH, Elec, 50 PSH.",
         "Terms: https://www.genesisenergy.co.nz/terms/powerhome-plan-terms https://www.genesisenergy.co.nz/offer-terms/power-shout-terms",
-        "Genesis quote gives rates both excl. and incl. GST; the incl. GST rate is used."
+        "Genesis quote gives rates both excl. and incl. GST; the incl. GST rate is used.",
+        "Quote snapshot: Genesis Energy's live quote is no longer fetched automatically. Confirm current rates with Genesis Energy before switching."
       ],
       "effectiveFrom": null,
       "effectiveNote": "No \"effective from\" date in Genesis's quote; rates are those quoted on the retrieval date.",
       "source": {
-        "method": "automatic",
+        "method": "snapshot",
         "url": "https://www.genesisenergy.co.nz/join",
         "retrievedAt": "2026-10-21T02:19:41.194Z",
-        "label": "Genesis Energy: \"Find your rates\" quote for the property (electricity)",
-        "endpoint": "https://www.genesisenergy.co.nz/api/npa/proxy/online/pricing/getOffers"
+        "label": "Genesis Energy: quote snapshot (live quote lookup disabled)"
       },
-      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up)."
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
+      "snapshot": true
     },
     {
       "id": "genesis-evhome-low",
@@ -254,18 +256,19 @@
         "Offer: EVHome.",
         "Terms: https://www.genesisenergy.co.nz/terms/powerhome-plan-terms",
         "Genesis quote gives rates both excl. and incl. GST; the incl. GST rate is used.",
-        "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans."
+        "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans.",
+        "Quote snapshot: Genesis Energy's live quote is no longer fetched automatically. Confirm current rates with Genesis Energy before switching."
       ],
       "effectiveFrom": null,
       "effectiveNote": "No \"effective from\" date in Genesis's quote; rates are those quoted on the retrieval date.",
       "source": {
-        "method": "automatic",
+        "method": "snapshot",
         "url": "https://www.genesisenergy.co.nz/join",
         "retrievedAt": "2026-10-21T02:19:41.194Z",
-        "label": "Genesis Energy: \"Find your rates\" quote for the property (electricity)",
-        "endpoint": "https://www.genesisenergy.co.nz/api/npa/proxy/online/pricing/getOffers"
+        "label": "Genesis Energy: quote snapshot (live quote lookup disabled)"
       },
-      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up)."
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
+      "snapshot": true
     },
     {
       "id": "genesis-evhome-standard",
@@ -295,18 +298,19 @@
         "EVHome: for households with an electric vehicle (see EVHome plan terms); EV-only night rates not costed.",
         "Offer: EVHome.",
         "Terms: https://www.genesisenergy.co.nz/terms/powerhome-plan-terms",
-        "Genesis quote gives rates both excl. and incl. GST; the incl. GST rate is used."
+        "Genesis quote gives rates both excl. and incl. GST; the incl. GST rate is used.",
+        "Quote snapshot: Genesis Energy's live quote is no longer fetched automatically. Confirm current rates with Genesis Energy before switching."
       ],
       "effectiveFrom": null,
       "effectiveNote": "No \"effective from\" date in Genesis's quote; rates are those quoted on the retrieval date.",
       "source": {
-        "method": "automatic",
+        "method": "snapshot",
         "url": "https://www.genesisenergy.co.nz/join",
         "retrievedAt": "2026-10-21T02:19:41.194Z",
-        "label": "Genesis Energy: \"Find your rates\" quote for the property (electricity)",
-        "endpoint": "https://www.genesisenergy.co.nz/api/npa/proxy/online/pricing/getOffers"
+        "label": "Genesis Energy: quote snapshot (live quote lookup disabled)"
       },
-      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up)."
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
+      "snapshot": true
     },
     {
       "id": "genesis-evhomeps50-low",
@@ -338,18 +342,19 @@
         "Offer: HOME EVHOME, 50 PSH.",
         "Terms: https://www.genesisenergy.co.nz/terms/powerhome-plan-terms",
         "Genesis quote gives rates both excl. and incl. GST; the incl. GST rate is used.",
-        "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans."
+        "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans.",
+        "Quote snapshot: Genesis Energy's live quote is no longer fetched automatically. Confirm current rates with Genesis Energy before switching."
       ],
       "effectiveFrom": null,
       "effectiveNote": "No \"effective from\" date in Genesis's quote; rates are those quoted on the retrieval date.",
       "source": {
-        "method": "automatic",
+        "method": "snapshot",
         "url": "https://www.genesisenergy.co.nz/join",
         "retrievedAt": "2026-10-21T02:19:41.194Z",
-        "label": "Genesis Energy: \"Find your rates\" quote for the property (electricity)",
-        "endpoint": "https://www.genesisenergy.co.nz/api/npa/proxy/online/pricing/getOffers"
+        "label": "Genesis Energy: quote snapshot (live quote lookup disabled)"
       },
-      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up)."
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
+      "snapshot": true
     },
     {
       "id": "genesis-evhomeps50-standard",
@@ -380,18 +385,19 @@
         "Incentive: 50 hours of free \"Power Shout\" power (you choose the hours; not costed here).",
         "Offer: HOME EVHOME, 50 PSH.",
         "Terms: https://www.genesisenergy.co.nz/terms/powerhome-plan-terms",
-        "Genesis quote gives rates both excl. and incl. GST; the incl. GST rate is used."
+        "Genesis quote gives rates both excl. and incl. GST; the incl. GST rate is used.",
+        "Quote snapshot: Genesis Energy's live quote is no longer fetched automatically. Confirm current rates with Genesis Energy before switching."
       ],
       "effectiveFrom": null,
       "effectiveNote": "No \"effective from\" date in Genesis's quote; rates are those quoted on the retrieval date.",
       "source": {
-        "method": "automatic",
+        "method": "snapshot",
         "url": "https://www.genesisenergy.co.nz/join",
         "retrievedAt": "2026-10-21T02:19:41.194Z",
-        "label": "Genesis Energy: \"Find your rates\" quote for the property (electricity)",
-        "endpoint": "https://www.genesisenergy.co.nz/api/npa/proxy/online/pricing/getOffers"
+        "label": "Genesis Energy: quote snapshot (live quote lookup disabled)"
       },
-      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up)."
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
+      "snapshot": true
     },
     {
       "id": "genesis-standard-low",
@@ -418,18 +424,19 @@
         "Offer: Pay your way, No contracts.",
         "Terms: https://www.genesisenergy.co.nz/terms-and-conditions",
         "Genesis quote gives rates both excl. and incl. GST; the incl. GST rate is used.",
-        "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans."
+        "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans.",
+        "Quote snapshot: Genesis Energy's live quote is no longer fetched automatically. Confirm current rates with Genesis Energy before switching."
       ],
       "effectiveFrom": null,
       "effectiveNote": "No \"effective from\" date in Genesis's quote; rates are those quoted on the retrieval date.",
       "source": {
-        "method": "automatic",
+        "method": "snapshot",
         "url": "https://www.genesisenergy.co.nz/join",
         "retrievedAt": "2026-10-21T02:19:41.194Z",
-        "label": "Genesis Energy: \"Find your rates\" quote for the property (electricity)",
-        "endpoint": "https://www.genesisenergy.co.nz/api/npa/proxy/online/pricing/getOffers"
+        "label": "Genesis Energy: quote snapshot (live quote lookup disabled)"
       },
-      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up)."
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
+      "snapshot": true
     },
     {
       "id": "genesis-standard-standard",
@@ -455,18 +462,19 @@
         "Electricity tariff \"Standard All Inclusive\" and \"Standard Daily Fixed\" (VECT PowerHome Standard ARHLC+ 2025).",
         "Offer: Pay your way, No contracts.",
         "Terms: https://www.genesisenergy.co.nz/terms-and-conditions",
-        "Genesis quote gives rates both excl. and incl. GST; the incl. GST rate is used."
+        "Genesis quote gives rates both excl. and incl. GST; the incl. GST rate is used.",
+        "Quote snapshot: Genesis Energy's live quote is no longer fetched automatically. Confirm current rates with Genesis Energy before switching."
       ],
       "effectiveFrom": null,
       "effectiveNote": "No \"effective from\" date in Genesis's quote; rates are those quoted on the retrieval date.",
       "source": {
-        "method": "automatic",
+        "method": "snapshot",
         "url": "https://www.genesisenergy.co.nz/join",
         "retrievedAt": "2026-10-21T02:19:41.194Z",
-        "label": "Genesis Energy: \"Find your rates\" quote for the property (electricity)",
-        "endpoint": "https://www.genesisenergy.co.nz/api/npa/proxy/online/pricing/getOffers"
+        "label": "Genesis Energy: quote snapshot (live quote lookup disabled)"
       },
-      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up)."
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
+      "snapshot": true
     },
     {
       "id": "genesis-gas-gashome-low",
@@ -501,18 +509,19 @@
         "Dual fuel: $10 monthly credit when you combine electricity and piped gas (Genesis Home Bundle Rewards, on PowerHome).",
         "Offer: HOME GasHome.",
         "Terms: https://www.genesisenergy.co.nz/terms/powerhome-plan-terms",
-        "Genesis quote gives rates both excl. and incl. GST; the incl. GST rate is used."
+        "Genesis quote gives rates both excl. and incl. GST; the incl. GST rate is used.",
+        "Quote snapshot: Genesis Energy's live quote is no longer fetched automatically. Confirm current rates with Genesis Energy before switching."
       ],
       "effectiveFrom": null,
       "effectiveNote": "No \"effective from\" date in Genesis's quote; rates are those quoted on the retrieval date.",
       "source": {
-        "method": "automatic",
+        "method": "snapshot",
         "url": "https://www.genesisenergy.co.nz/join",
         "retrievedAt": "2026-10-21T02:19:41.194Z",
-        "label": "Genesis Energy: \"Find your rates\" quote for the property (gas)",
-        "endpoint": "https://www.genesisenergy.co.nz/api/npa/proxy/online/pricing/getOffers"
+        "label": "Genesis Energy: quote snapshot (live quote lookup disabled)"
       },
-      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up)."
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
+      "snapshot": true
     },
     {
       "id": "genesis-gas-gashome-standard",
@@ -547,18 +556,19 @@
         "Dual fuel: $10 monthly credit when you combine electricity and piped gas (Genesis Home Bundle Rewards, on PowerHome).",
         "Offer: HOME GasHome.",
         "Terms: https://www.genesisenergy.co.nz/terms/powerhome-plan-terms",
-        "Genesis quote gives rates both excl. and incl. GST; the incl. GST rate is used."
+        "Genesis quote gives rates both excl. and incl. GST; the incl. GST rate is used.",
+        "Quote snapshot: Genesis Energy's live quote is no longer fetched automatically. Confirm current rates with Genesis Energy before switching."
       ],
       "effectiveFrom": null,
       "effectiveNote": "No \"effective from\" date in Genesis's quote; rates are those quoted on the retrieval date.",
       "source": {
-        "method": "automatic",
+        "method": "snapshot",
         "url": "https://www.genesisenergy.co.nz/join",
         "retrievedAt": "2026-10-21T02:19:41.194Z",
-        "label": "Genesis Energy: \"Find your rates\" quote for the property (gas)",
-        "endpoint": "https://www.genesisenergy.co.nz/api/npa/proxy/online/pricing/getOffers"
+        "label": "Genesis Energy: quote snapshot (live quote lookup disabled)"
       },
-      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up)."
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
+      "snapshot": true
     },
     {
       "id": "genesis-gas-standard-low",
@@ -585,18 +595,19 @@
         "Genesis's gas \"Low\" price book (Residential Convenience); pick the one that suits your gas use.",
         "Offer: Pay your way, No contracts.",
         "Terms: https://www.genesisenergy.co.nz/terms-and-conditions",
-        "Genesis quote gives rates both excl. and incl. GST; the incl. GST rate is used."
+        "Genesis quote gives rates both excl. and incl. GST; the incl. GST rate is used.",
+        "Quote snapshot: Genesis Energy's live quote is no longer fetched automatically. Confirm current rates with Genesis Energy before switching."
       ],
       "effectiveFrom": null,
       "effectiveNote": "No \"effective from\" date in Genesis's quote; rates are those quoted on the retrieval date.",
       "source": {
-        "method": "automatic",
+        "method": "snapshot",
         "url": "https://www.genesisenergy.co.nz/join",
         "retrievedAt": "2026-10-21T02:19:41.194Z",
-        "label": "Genesis Energy: \"Find your rates\" quote for the property (gas)",
-        "endpoint": "https://www.genesisenergy.co.nz/api/npa/proxy/online/pricing/getOffers"
+        "label": "Genesis Energy: quote snapshot (live quote lookup disabled)"
       },
-      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up)."
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
+      "snapshot": true
     },
     {
       "id": "genesis-gas-standard-standard",
@@ -623,18 +634,19 @@
         "Genesis's gas \"Standard\" price book (Residential Lifestyle); pick the one that suits your gas use.",
         "Offer: Pay your way, No contracts.",
         "Terms: https://www.genesisenergy.co.nz/terms-and-conditions",
-        "Genesis quote gives rates both excl. and incl. GST; the incl. GST rate is used."
+        "Genesis quote gives rates both excl. and incl. GST; the incl. GST rate is used.",
+        "Quote snapshot: Genesis Energy's live quote is no longer fetched automatically. Confirm current rates with Genesis Energy before switching."
       ],
       "effectiveFrom": null,
       "effectiveNote": "No \"effective from\" date in Genesis's quote; rates are those quoted on the retrieval date.",
       "source": {
-        "method": "automatic",
+        "method": "snapshot",
         "url": "https://www.genesisenergy.co.nz/join",
         "retrievedAt": "2026-10-21T02:19:41.194Z",
-        "label": "Genesis Energy: \"Find your rates\" quote for the property (gas)",
-        "endpoint": "https://www.genesisenergy.co.nz/api/npa/proxy/online/pricing/getOffers"
+        "label": "Genesis Energy: quote snapshot (live quote lookup disabled)"
       },
-      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up)."
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
+      "snapshot": true
     },
     {
       "id": "contact-basic-low",
@@ -828,18 +840,19 @@
         "Enjoy simplicity. Rates stay the same around the clock.",
         "Open term: no early termination fees or contract term length.",
         "Dual fuel: Dual fuel discount: The daily dual fuel discount of 17.25 cents (incl. GST) applies as long as you keep another service with us too, including electricity, piped gas and/or LPG.",
-        "Mercury states its electricity prices include GST."
+        "Mercury states its electricity prices include GST.",
+        "Quote snapshot: Mercury's live quote is no longer fetched automatically. Confirm current rates with Mercury before switching."
       ],
       "effectiveFrom": null,
       "effectiveNote": "No \"effective from\" date given by the retailer's quote; rates are those quoted on the retrieval date.",
       "source": {
-        "method": "automatic",
+        "method": "snapshot",
         "url": "https://www.mercury.co.nz/join-journey",
         "retrievedAt": "2026-10-21T02:20:12.079Z",
-        "label": "Mercury: join-journey quote for the property (OPEN offer)",
-        "endpoint": "https://www.mercury.co.nz/api/offers/power"
+        "label": "Mercury: quote snapshot (live quote lookup disabled)"
       },
-      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up)."
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
+      "snapshot": true
     },
     {
       "id": "mercury-open-flextou-standard",
@@ -879,18 +892,19 @@
         "Needs a smart meter that communicates; Mercury may move you to another plan if not.",
         "Open term: no early termination fees or contract term length.",
         "Dual fuel: Dual fuel discount: The daily dual fuel discount of 17.25 cents (incl. GST) applies as long as you keep another service with us too, including electricity, piped gas and/or LPG.",
-        "Mercury states its electricity prices include GST."
+        "Mercury states its electricity prices include GST.",
+        "Quote snapshot: Mercury's live quote is no longer fetched automatically. Confirm current rates with Mercury before switching."
       ],
       "effectiveFrom": null,
       "effectiveNote": "No \"effective from\" date given by the retailer's quote; rates are those quoted on the retrieval date.",
       "source": {
-        "method": "automatic",
+        "method": "snapshot",
         "url": "https://www.mercury.co.nz/join-journey",
         "retrievedAt": "2026-10-21T02:20:12.079Z",
-        "label": "Mercury: join-journey quote for the property (OPEN offer)",
-        "endpoint": "https://www.mercury.co.nz/api/offers/power"
+        "label": "Mercury: quote snapshot (live quote lookup disabled)"
       },
-      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up)."
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
+      "snapshot": true
     },
     {
       "id": "mercury-open-a1-low",
@@ -923,18 +937,19 @@
         "Open term: no early termination fees or contract term length.",
         "Dual fuel: Dual fuel discount: The daily dual fuel discount of 17.25 cents (incl. GST) applies as long as you keep another service with us too, including electricity, piped gas and/or LPG.",
         "Mercury states its electricity prices include GST.",
-        "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans."
+        "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans.",
+        "Quote snapshot: Mercury's live quote is no longer fetched automatically. Confirm current rates with Mercury before switching."
       ],
       "effectiveFrom": null,
       "effectiveNote": "No \"effective from\" date given by the retailer's quote; rates are those quoted on the retrieval date.",
       "source": {
-        "method": "automatic",
+        "method": "snapshot",
         "url": "https://www.mercury.co.nz/join-journey",
         "retrievedAt": "2026-10-21T02:20:12.079Z",
-        "label": "Mercury: join-journey quote for the property (OPEN offer)",
-        "endpoint": "https://www.mercury.co.nz/api/offers/power"
+        "label": "Mercury: quote snapshot (live quote lookup disabled)"
       },
-      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up)."
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
+      "snapshot": true
     },
     {
       "id": "mercury-open-flextou-low",
@@ -975,18 +990,19 @@
         "Open term: no early termination fees or contract term length.",
         "Dual fuel: Dual fuel discount: The daily dual fuel discount of 17.25 cents (incl. GST) applies as long as you keep another service with us too, including electricity, piped gas and/or LPG.",
         "Mercury states its electricity prices include GST.",
-        "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans."
+        "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans.",
+        "Quote snapshot: Mercury's live quote is no longer fetched automatically. Confirm current rates with Mercury before switching."
       ],
       "effectiveFrom": null,
       "effectiveNote": "No \"effective from\" date given by the retailer's quote; rates are those quoted on the retrieval date.",
       "source": {
-        "method": "automatic",
+        "method": "snapshot",
         "url": "https://www.mercury.co.nz/join-journey",
         "retrievedAt": "2026-10-21T02:20:12.079Z",
-        "label": "Mercury: join-journey quote for the property (OPEN offer)",
-        "endpoint": "https://www.mercury.co.nz/api/offers/power"
+        "label": "Mercury: quote snapshot (live quote lookup disabled)"
       },
-      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up)."
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
+      "snapshot": true
     },
     {
       "id": "mercury-1year-a1-standard",
@@ -1022,18 +1038,19 @@
         "Early termination fee: There is a $150 early termination fee in month 1 and will reduce by $12.50 each month over the term of your agreement. This is payable only once in the term if you switch or terminate your electricity services.",
         "$150 electricity credit (one-off) is spread over the first year in the annual cost.",
         "Dual fuel: Dual fuel discount: The daily dual fuel discount of 17.25 cents (incl. GST) applies as long as you keep another service with us too, including electricity, piped gas and/or LPG.",
-        "Mercury states its electricity prices include GST."
+        "Mercury states its electricity prices include GST.",
+        "Quote snapshot: Mercury's live quote is no longer fetched automatically. Confirm current rates with Mercury before switching."
       ],
       "effectiveFrom": null,
       "effectiveNote": "No \"effective from\" date given by the retailer's quote; rates are those quoted on the retrieval date.",
       "source": {
-        "method": "automatic",
+        "method": "snapshot",
         "url": "https://www.mercury.co.nz/join-journey",
         "retrievedAt": "2026-10-21T02:20:12.079Z",
-        "label": "Mercury: join-journey quote for the property (1YEAR offer)",
-        "endpoint": "https://www.mercury.co.nz/api/offers/power"
+        "label": "Mercury: quote snapshot (live quote lookup disabled)"
       },
-      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up)."
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
+      "snapshot": true
     },
     {
       "id": "mercury-1year-flextou-standard",
@@ -1077,18 +1094,19 @@
         "Early termination fee: There is a $150 early termination fee in month 1 and will reduce by $12.50 each month over the term of your agreement. This is payable only once in the term if you switch or terminate your electricity services.",
         "$150 electricity credit (one-off) is spread over the first year in the annual cost.",
         "Dual fuel: Dual fuel discount: The daily dual fuel discount of 17.25 cents (incl. GST) applies as long as you keep another service with us too, including electricity, piped gas and/or LPG.",
-        "Mercury states its electricity prices include GST."
+        "Mercury states its electricity prices include GST.",
+        "Quote snapshot: Mercury's live quote is no longer fetched automatically. Confirm current rates with Mercury before switching."
       ],
       "effectiveFrom": null,
       "effectiveNote": "No \"effective from\" date given by the retailer's quote; rates are those quoted on the retrieval date.",
       "source": {
-        "method": "automatic",
+        "method": "snapshot",
         "url": "https://www.mercury.co.nz/join-journey",
         "retrievedAt": "2026-10-21T02:20:12.079Z",
-        "label": "Mercury: join-journey quote for the property (1YEAR offer)",
-        "endpoint": "https://www.mercury.co.nz/api/offers/power"
+        "label": "Mercury: quote snapshot (live quote lookup disabled)"
       },
-      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up)."
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
+      "snapshot": true
     },
     {
       "id": "mercury-1year-a1-low",
@@ -1125,18 +1143,19 @@
         "$150 electricity credit (one-off) is spread over the first year in the annual cost.",
         "Dual fuel: Dual fuel discount: The daily dual fuel discount of 17.25 cents (incl. GST) applies as long as you keep another service with us too, including electricity, piped gas and/or LPG.",
         "Mercury states its electricity prices include GST.",
-        "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans."
+        "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans.",
+        "Quote snapshot: Mercury's live quote is no longer fetched automatically. Confirm current rates with Mercury before switching."
       ],
       "effectiveFrom": null,
       "effectiveNote": "No \"effective from\" date given by the retailer's quote; rates are those quoted on the retrieval date.",
       "source": {
-        "method": "automatic",
+        "method": "snapshot",
         "url": "https://www.mercury.co.nz/join-journey",
         "retrievedAt": "2026-10-21T02:20:12.079Z",
-        "label": "Mercury: join-journey quote for the property (1YEAR offer)",
-        "endpoint": "https://www.mercury.co.nz/api/offers/power"
+        "label": "Mercury: quote snapshot (live quote lookup disabled)"
       },
-      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up)."
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
+      "snapshot": true
     },
     {
       "id": "mercury-1year-flextou-low",
@@ -1181,18 +1200,19 @@
         "$150 electricity credit (one-off) is spread over the first year in the annual cost.",
         "Dual fuel: Dual fuel discount: The daily dual fuel discount of 17.25 cents (incl. GST) applies as long as you keep another service with us too, including electricity, piped gas and/or LPG.",
         "Mercury states its electricity prices include GST.",
-        "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans."
+        "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans.",
+        "Quote snapshot: Mercury's live quote is no longer fetched automatically. Confirm current rates with Mercury before switching."
       ],
       "effectiveFrom": null,
       "effectiveNote": "No \"effective from\" date given by the retailer's quote; rates are those quoted on the retrieval date.",
       "source": {
-        "method": "automatic",
+        "method": "snapshot",
         "url": "https://www.mercury.co.nz/join-journey",
         "retrievedAt": "2026-10-21T02:20:12.079Z",
-        "label": "Mercury: join-journey quote for the property (1YEAR offer)",
-        "endpoint": "https://www.mercury.co.nz/api/offers/power"
+        "label": "Mercury: quote snapshot (live quote lookup disabled)"
       },
-      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up)."
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
+      "snapshot": true
     },
     {
       "id": "mercury-gas-piped",
@@ -1223,18 +1243,19 @@
       "conditions": [
         "Same gas price for low and standard users.",
         "Dual fuel: Dual fuel discount: The daily dual fuel discount of 17.25 cents (incl. GST) applies as long as you keep another service with us too, including electricity, piped gas and/or LPG.",
-        "Mercury states its gas prices include GST."
+        "Mercury states its gas prices include GST.",
+        "Quote snapshot: Mercury's live quote is no longer fetched automatically. Confirm current rates with Mercury before switching."
       ],
       "effectiveFrom": null,
       "effectiveNote": "No \"effective from\" date given by the retailer's quote; rates are those quoted on the retrieval date.",
       "source": {
-        "method": "automatic",
+        "method": "snapshot",
         "url": "https://www.mercury.co.nz/join-journey",
         "retrievedAt": "2026-10-21T02:20:12.079Z",
-        "label": "Mercury: join-journey quote for the property (piped gas)",
-        "endpoint": "https://www.mercury.co.nz/api/offers/piped-gas"
+        "label": "Mercury: quote snapshot (live quote lookup disabled)"
       },
-      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up)."
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
+      "snapshot": true
     },
     {
       "id": "meridian-freedom-low",
@@ -1484,18 +1505,19 @@
         "These are Powershop \"Special Rates\": they assume you buy the monthly Staying Powerpack and all limited-time Specials. Without packs you pay higher \"Standard Rates\" (published only in robots-disallowed PDFs, so not included).",
         "Get Shifty: separate peak and off-peak rates in April, May, June, July, August, September; peak hours are not stated in the quote.",
         "Powershop states the rates include GST and Electricity Authority levies.",
-        "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans."
+        "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans.",
+        "Quote snapshot: Powershop's live quote is no longer fetched automatically. Confirm current rates with Powershop before switching."
       ],
       "effectiveFrom": "2026-04-01",
       "effectiveNote": "Effective from 2026-04-01 (as stated by the retailer).",
       "source": {
-        "method": "automatic",
+        "method": "snapshot",
         "url": "https://www.powershop.co.nz/get-a-price/",
         "retrievedAt": "2026-10-21T02:21:17.871Z",
-        "label": "Powershop: \"Price check your address\" calculator for the property",
-        "endpoint": "https://www.powershop.co.nz/graphql/"
+        "label": "Powershop: quote snapshot (live quote lookup disabled)"
       },
-      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up)."
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
+      "snapshot": true
     },
     {
       "id": "powershop-getshifty-standard",
@@ -1576,18 +1598,19 @@
         "Seasonal pricing: a different rate each month (all 12 months from Powershop's calculator are used).",
         "These are Powershop \"Special Rates\": they assume you buy the monthly Staying Powerpack and all limited-time Specials. Without packs you pay higher \"Standard Rates\" (published only in robots-disallowed PDFs, so not included).",
         "Get Shifty: separate peak and off-peak rates in April, May, June, July, August, September; peak hours are not stated in the quote.",
-        "Powershop states the rates include GST and Electricity Authority levies."
+        "Powershop states the rates include GST and Electricity Authority levies.",
+        "Quote snapshot: Powershop's live quote is no longer fetched automatically. Confirm current rates with Powershop before switching."
       ],
       "effectiveFrom": "2026-04-01",
       "effectiveNote": "Effective from 2026-04-01 (as stated by the retailer).",
       "source": {
-        "method": "automatic",
+        "method": "snapshot",
         "url": "https://www.powershop.co.nz/get-a-price/",
         "retrievedAt": "2026-10-21T02:21:17.871Z",
-        "label": "Powershop: \"Price check your address\" calculator for the property",
-        "endpoint": "https://www.powershop.co.nz/graphql/"
+        "label": "Powershop: quote snapshot (live quote lookup disabled)"
       },
-      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up)."
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
+      "snapshot": true
     }
   ],
   "providers": [
@@ -1602,11 +1625,22 @@
       "domains": [
         "genesisenergy.co.nz"
       ],
-      "status": "automatic",
-      "addressQuote": true,
+      "status": "not_available_automatically",
+      "reason": "Live quote disabled: Genesis's \"Find your rates\" quote is answered by its join app's internal API (an undocumented endpoint, not a public page), which is not an allowed method, so it is no longer called. The 12 plans shown are a quote snapshot retrieved 21 Oct 2026 (flagged stale after 35 days). Get a current quote (current electricity rates, piped gas, dual-fuel (Home Bundle Rewards) credit) on Genesis Energy's site and add it under \"Add a quote\".",
+      "manualQuote": {
+        "url": "https://www.genesisenergy.co.nz/join",
+        "what": [
+          "current electricity rates",
+          "piped gas",
+          "dual-fuel (Home Bundle Rewards) credit"
+        ]
+      },
+      "snapshot": true,
+      "snapshotRetrievedAt": "2026-10-21T02:19:41.194Z",
       "planCount": 12,
       "checkedAt": "2026-10-21T02:19:41.194Z",
-      "httpStatus": 200
+      "httpStatus": null,
+      "liveQuoteDisabled": true
     },
     {
       "id": "frank",
@@ -1640,7 +1674,7 @@
         "contact.co.nz"
       ],
       "status": "not_available_automatically",
-      "reason": "Live quote disabled: Contact's online quote only works with an API key copied from its join-page script, which is not an allowed method, so it is no longer called. The 4 electricity plans shown are a quote snapshot retrieved 21 Oct 2026 (flagged stale after 35 days). Get a current quote (electricity, gas and the Good Nights / Good Weekends / Good Charge plans) on Contact's site and add it under \"Add a quote\".",
+      "reason": "Live quote disabled: Contact's online quote only works with an API key copied from its join-page script, which is not an allowed method, so it is no longer called. The 4 plans shown are a quote snapshot retrieved 21 Oct 2026 (flagged stale after 35 days). Get a current quote (current electricity rates, gas, Good Nights, Good Weekends, Good Charge) on Contact Energy's site and add it under \"Add a quote\".",
       "manualQuote": {
         "url": "https://journey.contact.co.nz/residential/find-a-plan",
         "what": [
@@ -1656,7 +1690,7 @@
       "planCount": 4,
       "checkedAt": "2026-10-21T02:19:50.559Z",
       "httpStatus": null,
-      "liveQuoteDisabled": "2026-10-21"
+      "liveQuoteDisabled": true
     },
     {
       "id": "mercury",
@@ -1669,11 +1703,22 @@
       "domains": [
         "mercury.co.nz"
       ],
-      "status": "automatic",
-      "addressQuote": true,
+      "status": "not_available_automatically",
+      "reason": "Live quote disabled: Mercury's join-journey quote is answered by its join app's internal API (undocumented endpoints plus a session cookie/ID issued by that API), which is not an allowed method, so it is no longer called. The 9 plans shown are a quote snapshot retrieved 21 Oct 2026 (flagged stale after 35 days). Get a current quote (current electricity rates (Open Term and 1 Year Fixed, flat and Flex), piped gas, dual-fuel discount) on Mercury's site and add it under \"Add a quote\".",
+      "manualQuote": {
+        "url": "https://www.mercury.co.nz/join-journey",
+        "what": [
+          "current electricity rates (Open Term and 1 Year Fixed, flat and Flex)",
+          "piped gas",
+          "dual-fuel discount"
+        ]
+      },
+      "snapshot": true,
+      "snapshotRetrievedAt": "2026-10-21T02:20:12.079Z",
       "planCount": 9,
       "checkedAt": "2026-10-21T02:20:12.079Z",
-      "httpStatus": 200
+      "httpStatus": null,
+      "liveQuoteDisabled": true
     },
     {
       "id": "meridian",
@@ -1701,11 +1746,20 @@
       "domains": [
         "powershop.co.nz"
       ],
-      "status": "automatic",
-      "addressQuote": true,
+      "status": "not_available_automatically",
+      "reason": "Live quote disabled: Powershop's \"Price check your address\" calculator is answered by its internal /graphql/ API (undocumented, not a public page), which is not an allowed method, so it is no longer called. The 2 plans shown are a quote snapshot retrieved 21 Oct 2026 (flagged stale after 35 days). Get a current quote (current monthly electricity rates (Get Shifty)) on Powershop's site and add it under \"Add a quote\".",
+      "manualQuote": {
+        "url": "https://www.powershop.co.nz/get-a-price/",
+        "what": [
+          "current monthly electricity rates (Get Shifty)"
+        ]
+      },
+      "snapshot": true,
+      "snapshotRetrievedAt": "2026-10-21T02:21:17.871Z",
       "planCount": 2,
       "checkedAt": "2026-10-21T02:21:17.871Z",
-      "httpStatus": 200
+      "httpStatus": null,
+      "liveQuoteDisabled": true
     },
     {
       "id": "electrickiwi",
@@ -1996,7 +2050,7 @@
     },
     {
       "url": "https://www.genesisenergy.co.nz/api/npa/proxy/online/pricing/getOffers",
-      "label": "Genesis: electricity offers",
+      "label": "Genesis: electricity offers [21 Oct 2026 snapshot retrieval; live lookup disabled since]",
       "method": "POST",
       "retrievedAt": "2026-10-21T02:19:43.973Z",
       "status": "ok",
@@ -2004,7 +2058,7 @@
     },
     {
       "url": "https://www.genesisenergy.co.nz/api/npa/proxy/online/pricing/getOffers",
-      "label": "Genesis: gas offers",
+      "label": "Genesis: gas offers [21 Oct 2026 snapshot retrieval; live lookup disabled since]",
       "method": "POST",
       "retrievedAt": "2026-10-21T02:19:44.849Z",
       "status": "ok",
@@ -2131,7 +2185,7 @@
     },
     {
       "url": "https://www.mercury.co.nz/join-journey",
-      "label": "Mercury: join page",
+      "label": "Mercury: join page [21 Oct 2026 snapshot retrieval; live lookup disabled since]",
       "method": "GET",
       "retrievedAt": "2026-10-21T02:20:15.276Z",
       "status": "ok",
@@ -2139,7 +2193,7 @@
     },
     {
       "url": "https://www.mercury.co.nz/api/address/search",
-      "label": "Mercury: address search",
+      "label": "Mercury: address search [21 Oct 2026 snapshot retrieval; live lookup disabled since]",
       "method": "GET",
       "retrievedAt": "2026-10-21T02:20:15.682Z",
       "status": "ok",
@@ -2147,7 +2201,7 @@
     },
     {
       "url": "https://www.mercury.co.nz/api/offers",
-      "label": "Mercury: offers",
+      "label": "Mercury: offers [21 Oct 2026 snapshot retrieval; live lookup disabled since]",
       "method": "GET",
       "retrievedAt": "2026-10-21T02:20:17.037Z",
       "status": "ok",
@@ -2155,7 +2209,7 @@
     },
     {
       "url": "https://www.mercury.co.nz/api/address/service-availability",
-      "label": "Mercury: availability (OPEN)",
+      "label": "Mercury: availability (OPEN) [21 Oct 2026 snapshot retrieval; live lookup disabled since]",
       "method": "GET",
       "retrievedAt": "2026-10-21T02:20:22.589Z",
       "status": "ok",
@@ -2163,7 +2217,7 @@
     },
     {
       "url": "https://www.mercury.co.nz/api/offers/power",
-      "label": "Mercury: power rates (OPEN)",
+      "label": "Mercury: power rates (OPEN) [21 Oct 2026 snapshot retrieval; live lookup disabled since]",
       "method": "GET",
       "retrievedAt": "2026-10-21T02:20:34.461Z",
       "status": "ok",
@@ -2171,7 +2225,7 @@
     },
     {
       "url": "https://www.mercury.co.nz/api/offers/keypoints-terms-discounts",
-      "label": "Mercury: key points (OPEN)",
+      "label": "Mercury: key points (OPEN) [21 Oct 2026 snapshot retrieval; live lookup disabled since]",
       "method": "GET",
       "retrievedAt": "2026-10-21T02:20:35.014Z",
       "status": "ok",
@@ -2179,7 +2233,7 @@
     },
     {
       "url": "https://www.mercury.co.nz/api/offers/piped-gas",
-      "label": "Mercury: piped gas rates",
+      "label": "Mercury: piped gas rates [21 Oct 2026 snapshot retrieval; live lookup disabled since]",
       "method": "GET",
       "retrievedAt": "2026-10-21T02:20:36.412Z",
       "status": "ok",
@@ -2187,7 +2241,7 @@
     },
     {
       "url": "https://www.mercury.co.nz/api/address/service-availability",
-      "label": "Mercury: availability (1YEAR)",
+      "label": "Mercury: availability (1YEAR) [21 Oct 2026 snapshot retrieval; live lookup disabled since]",
       "method": "GET",
       "retrievedAt": "2026-10-21T02:20:41.457Z",
       "status": "ok",
@@ -2195,7 +2249,7 @@
     },
     {
       "url": "https://www.mercury.co.nz/api/offers/power",
-      "label": "Mercury: power rates (1YEAR)",
+      "label": "Mercury: power rates (1YEAR) [21 Oct 2026 snapshot retrieval; live lookup disabled since]",
       "method": "GET",
       "retrievedAt": "2026-10-21T02:21:10.892Z",
       "status": "ok",
@@ -2203,7 +2257,7 @@
     },
     {
       "url": "https://www.mercury.co.nz/api/offers/keypoints-terms-discounts",
-      "label": "Mercury: key points (1YEAR)",
+      "label": "Mercury: key points (1YEAR) [21 Oct 2026 snapshot retrieval; live lookup disabled since]",
       "method": "GET",
       "retrievedAt": "2026-10-21T02:21:11.470Z",
       "status": "ok",
@@ -2227,7 +2281,7 @@
     },
     {
       "url": "https://www.powershop.co.nz/get-a-price/",
-      "label": "Powershop: get a price page",
+      "label": "Powershop: get a price page [21 Oct 2026 snapshot retrieval; live lookup disabled since]",
       "method": "GET",
       "retrievedAt": "2026-10-21T02:21:20.783Z",
       "status": "ok",
@@ -2235,7 +2289,7 @@
     },
     {
       "url": "https://www.powershop.co.nz/graphql/",
-      "label": "Powershop: price estimate",
+      "label": "Powershop: price estimate [21 Oct 2026 snapshot retrieval; live lookup disabled since]",
       "method": "POST",
       "retrievedAt": "2026-10-21T02:21:21.777Z",
       "status": "ok",
