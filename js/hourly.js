@@ -129,6 +129,23 @@ export const BAND_SPECS = [
     match: (tb) => tb.peak === 'weekdays 7–9am and 5–9pm' && /Saturdays all day; weekdays 9am–5pm and 9pm–7am/.test(tb.offpeak || '') && /^Sundays/.test(tb.free || ''),
     band: (d, min) => (d === 0 ? 'free' : WEEKDAY(d) && inR(min, [[H(7), H(9)], [H(17), H(21)]]) ? 'peak' : 'offpeak'),
   },
+  {
+    id: 'octopus-flexi',
+    match: (tb) => tb.peak === 'weekdays 7–11am and 5–9pm' && tb.offpeak === 'weekdays 11am–5pm and 9–11pm; weekends 7am–11pm' && tb.night === 'every day 11pm–7am',
+    band: (d, min) => (!inR(min, [[H(7), H(23)]]) ? 'night' : WEEKDAY(d) && inR(min, [[H(7), H(11)], [H(17), H(21)]]) ? 'peak' : 'offpeak'),
+  },
+  {
+    id: 'octopus-free-lunch',
+    freeLabel: 'free (11am–2pm)',
+    match: (tb) => tb.peak === 'every day 7–11am and 5–9pm' && tb.free === 'every day 11am–2pm' && tb.offpeak === 'every day 2–5pm and 9pm–7am',
+    band: (d, min) => (inR(min, [[H(11), H(14)]]) ? 'free' : inR(min, [[H(7), H(11)], [H(17), H(21)]]) ? 'peak' : 'offpeak'),
+  },
+  {
+    id: 'ecotricity-ecosaver',
+    note: 'Ecotricity\'s weekend rates weren\'t captured, so weekends are assumed to use the weekday bands.',
+    match: (tb) => tb.peak === '7–11am and 5–9pm (weekday chart; weekends assumed the same)' && tb.offpeak === '9pm–7am and 11am–5pm (weekday chart; weekends assumed the same)',
+    band: (d, min) => (inR(min, [[H(7), H(11)], [H(17), H(21)]]) ? 'peak' : 'offpeak'),
+  },
 ];
 
 export function specFor(plan) {
@@ -176,7 +193,7 @@ function toShares(f, plan) {
   return { peak: (f.peak || 0) / rem, night: (f.night || 0) / rem, free };
 }
 const blend = (a, b, w) => { const o = {}; for (const k of new Set([...Object.keys(a || {}), ...Object.keys(b || {})])) o[k] = w * ((a || {})[k] || 0) + (1 - w) * ((b || {})[k] || 0); return o; };
-const describe = (f) => Object.entries(f).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${pct(v)} ${k === 'offpeak' ? 'off-peak' : k === 'free' ? 'free (Sundays)' : k}`).join(', ');
+const describe = (f, spec) => Object.entries(f).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${pct(v)} ${k === 'offpeak' ? 'off-peak' : k === 'free' ? spec?.freeLabel || 'free (Sundays)' : k}`).join(', ');
 
 export function describeWeights(w) {
   const groups = [];
@@ -202,8 +219,8 @@ export function hourlySharesForPlan(plan, rows, opts = {}) {
   const monthShares = monthFractions.map((f) => toShares(f, plan));
   const mean = blend(Object.fromEntries(Object.keys(monthFractions[0]).map((k) => [k, monthFractions.reduce((t, f) => t + (f[k] || 0), 0) / 12])), {}, 1);
   const parts = [];
-  if (fw) parts.push(`winter (${sc.winter.text}): ${describe(fw)}`);
-  if (fs) parts.push(`spring (${sc.spring.text}): ${describe(fs)}`);
+  if (fw) parts.push(`winter (${sc.winter.text}): ${describe(fw, spec)}`);
+  if (fs) parts.push(`spring (${sc.spring.text}): ${describe(fs, spec)}`);
   const how = fw && fs
     ? `Each month's kWh from your bills is split with: ${describeWeights(weights)}${weights.slice(11).concat(weights.slice(0, 2)).every((x) => x === 0) ? ' (Dec–Feb use the spring shape: there is no summer data)' : ''}. Edit the month weights under "When you use power".`
     : fw ? 'Only winter data is loaded, so every month uses the winter shape: summer use may differ.' : 'Your hourly data covers only spring, so winter heating may shift this split.';

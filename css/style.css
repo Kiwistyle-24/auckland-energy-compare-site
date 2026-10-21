@@ -158,3 +158,6 @@ footer { max-width:760px; margin:0 auto; padding:1rem 1.25rem 2rem; border-top:1
 .caveat { color:var(--muted); margin:.6rem 0 0; }
 @media (max-width:560px) { .figs { gap:.6rem 1.5rem; } }
 .more .alt { margin:.4rem 0; }
+
+/* short caveat shown on the row itself (e.g. seasonal rates only partly captured) */
+.who .flag { display: block; font-size: .78rem; color: #8a4b00; }

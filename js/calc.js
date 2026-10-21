@@ -66,10 +66,11 @@ export function variableCents(plan, kwh, shares, gstRate = GST_RATE) {
  * opts.promptPay: apply prompt-payment discount if the plan offers one.
  */
 export function periodCost(plan, { kwh, days, month }, shares, opts = {}, gstRate = GST_RATE) {
-  const fixed = days * inclGst(Number(plan.dailyCents), plan.gstInclusive, gstRate);
+  // Separately listed levies (e.g. Nova's EA levy per kWh, GIC gas levy per day) are added to the daily / unit charges.
+  const fixed = days * inclGst(Number(plan.dailyCents) + (Number(plan.levyCentsPerDay) || 0), plan.gstInclusive, gstRate);
   // Seasonal plans (e.g. Powershop) carry a rate set per calendar month; use that month's rates.
   const mr = month && Array.isArray(plan.monthlyRates) ? plan.monthlyRates[month - 1] : null;
-  const variable = variableCents(mr ? { ...plan, rates: mr } : plan, kwh, shares, gstRate);
+  const variable = variableCents(mr ? { ...plan, rates: mr } : plan, kwh, shares, gstRate) + kwh * inclGst(Number(plan.levyCentsPerKwh) || 0, plan.gstInclusive, gstRate);
   let cents = fixed + variable;
   const d = plan.discounts || {};
   if (opts.promptPay !== false && d.promptPaymentPct) cents *= 1 - d.promptPaymentPct / 100;
@@ -175,7 +176,7 @@ export function costOffer({ elecPlan, gasPlan }, scenario, opts = {}) {
     const x = p?.discounts?.bundle;
     if (x?.unconfirmed && isBundle(elecPlan, gasPlan)) assumptions.push(opts.unconfirmedCredits ? `Counts ${p.provider}'s $${x.monthlyCreditDollars}/month credit although its conditions are not shown (${x.condition || 'check the retailer\'s terms'}).` : `Not counted: ${p.provider}'s $${x.monthlyCreditDollars}/month credit, because its conditions are not shown (${x.condition || 'check the retailer\'s terms'}). Tick "Count credits whose conditions aren't shown" to include it.`);
   }
-  if (bundle) assumptions.push(`Dual-fuel discount applied (${[elecPlan, gasPlan].map((p) => p?.discounts?.bundle?.condition).filter(Boolean)[0] || 'same retailer for both fuels'}).`);
+  if (bundle && (bundle.pct || bundle.monthlyCreditDollars || bundle.dailyCreditCents)) assumptions.push(`Dual-fuel discount applied (${[elecPlan, gasPlan].map((p) => p?.discounts?.bundle?.condition).filter(Boolean)[0] || 'same retailer for both fuels'}).`);
   if (elecPlan?.freeHours && !hourly) assumptions.push(`Free-hours plan: assumes ${pct(shares.free)} of your power use falls in the free hours (edit "When you use power"). The result depends heavily on this.`);
   if (scenario.gasKwh > 0 && scenario.mode !== 'seasonal' && !gasPlan) warnings.push('No gas plan included.');
   return { months, annual, monthlyAvg: round2(annual / 12), warnings, assumptions, ineligible, assumptionDependent: !!(elecPlan && !planHasOnlyAnytime(elecPlan)), splitFromHourly: !!hourly, bundle: !!bundle };
@@ -256,20 +257,24 @@ export function rankOffers(plans, scenarioIn, prefs = {}, baseline = null) {
   const kwh = annualKwh(scenario);
   const wantGas = fuels === 'both' && kwh.gas > 0;
 
+  // Plans that need another service from the same retailer (e.g. Nova Multisaver: gas, broadband or mobile) are only
+  // ranked when paired with that retailer's other fuel, or when you say you'd take its broadband/mobile.
+  const sameGroup = (a, b) => a && b && (a.bundleGroup || a.provider) === (b.bundleGroup || b.provider);
+  const serviceOk = (e, g) => [[e, g], [g, e]].every(([x, y]) => !x?.requiresOtherService || sameGroup(x, y) || (prefs.allow || []).includes('broadband'));
   const pairOptions = (e) => {
-    if (!wantGas) return [null];
+    if (!wantGas) return serviceOk(e, null) ? [null] : [];
     let candidates = gas;
     if (prefs.dualFuel === 'only') candidates = gas.filter((g) => (g.bundleGroup || g.provider) === (e.bundleGroup || e.provider));
     // 'keep': switch power only, keeping your current gas, unless the power retailer also sells gas (then its own gas is considered too).
     else if (prefs.dualFuel === 'keep' && baseline?.gas) candidates = gas.filter((g) => g === baseline.gas || (g.bundleGroup || g.provider) === (e.bundleGroup || e.provider));
-    return candidates;
+    return candidates.filter((g) => serviceOk(e, g));
   };
 
   for (const e of elec) {
     if (baseline && e === baseline.electricity && !wantGas) continue; // identical to the baseline row
     const opts2 = pairOptions(e);
-    if (wantGas && !opts2.length) {
-      if (prefs.dualFuel === 'only') continue;
+    if (!opts2.length) {
+      if (!wantGas || prefs.dualFuel === 'only' || e.requiresOtherService) continue; // not available on its own
       offers.push(makeOffer(e, null, scenario, opts, true));
       continue;
     }

@@ -242,7 +242,8 @@ function conditionsList(o) {
     const d = p.discounts || {};
     if (d.promptPaymentPct) items.push(`${d.promptPaymentPct}% prompt-payment discount${state.prefs.promptPay === false ? ' (not applied: you unticked it)' : ' (applied)'}.`);
     if (d.monthlyCreditDollars) items.push(`$${d.monthlyCreditDollars}/month credit (applied).`);
-    if (d.bundle) items.push(`Dual-fuel credit${d.bundle.monthlyCreditDollars ? ` $${d.bundle.monthlyCreditDollars}/month` : ''}${d.bundle.dailyCreditCents ? ` ${d.bundle.dailyCreditCents}c/day` : ''}${d.bundle.pct ? ` ${d.bundle.pct}%` : ''}${d.bundle.unconfirmed && !state.prefs.unconfirmedCredits ? ' (not counted: its conditions are not shown)' : o.bundle ? ' (applied)' : ' (not applied: needs both fuels from the same retailer)'}.`);
+    if (d.bundle?.noDiscount) items.push(`Dual fuel: ${d.bundle.note}${o.bundle ? '' : ' (not paired here)'}.`);
+    else if (d.bundle) items.push(`Dual-fuel credit${d.bundle.monthlyCreditDollars ? ` $${d.bundle.monthlyCreditDollars}/month` : ''}${d.bundle.dailyCreditCents ? ` ${d.bundle.dailyCreditCents}c/day` : ''}${d.bundle.pct ? ` ${d.bundle.pct}%` : ''}${d.bundle.unconfirmed && !state.prefs.unconfirmedCredits ? ' (not counted: its conditions are not shown)' : o.bundle ? ' (applied)' : ' (not applied: needs both fuels from the same retailer)'}.`);
     if (d.oneOffCreditDollars) items.push(`One-off $${d.oneOffCreditDollars} sign-up credit${state.prefs.oneOffCredits === false ? ' (not counted: you unticked it)' : ' (counted, spread over year 1)'}.`);
     if (p.exitFee && p.fixedTerm !== true) items.push(`${p.provider}: exit fee: ${p.exitFee}.`);
     items.push(...c.filter((x) => !/^Low-user plan:/.test(x)));
@@ -259,6 +260,9 @@ function rateLine(p) {
     extra = `<br><span class="muted small">Seasonal: ${Math.min(...all).toFixed(2)}–${Math.max(...all).toFixed(2)}c/kWh across the year (rates shown are this month's)</span>`;
   }
   if (p.timeBands) extra += `<br><span class="muted small">Time bands: ${esc(Object.entries(p.timeBands).filter(([, v]) => v).map(([k, v]) => `${k} ${v}`).join('; '))}</span>`;
+  if (p.levyCentsPerKwh || p.levyCentsPerDay) extra += `<br><span class="muted small">Plus ${[p.levyCentsPerKwh ? `EA levy ${round2(inclGst(p.levyCentsPerKwh, p.gstInclusive) * 1000) / 1000}c/kWh` : '', p.levyCentsPerDay ? `GIC levy ${round2(inclGst(p.levyCentsPerDay, p.gstInclusive) * 1000) / 1000}c/day` : ''].filter(Boolean).join(' and ')} (incl. GST), included in the cost</span>`;
+  if (p.requiresOtherService?.length) extra += `<br><span class="tag manual">needs ${esc(p.requiresOtherService.join(', ').replace(/, ([^,]*)$/, ' or $1'))} with ${esc(p.provider)}</span>`;
+  if (p.cardFlag) extra += `<br><span class="tag stale">${esc(p.cardFlag)}</span>`;
   if (p.requires?.length) extra += `<br><span class="tag manual">needs ${esc(p.requires.map((x) => (x === 'ev' ? 'an EV' : 'same-retailer broadband or mobile (bundle)')).join(' + '))}</span>`;
   return `<div class="rates"><strong>${p.fuel === 'gas' ? 'Gas' : 'Power'}:</strong> ${esc(p.provider)} – ${esc(p.name)} ${userTag(p)}<br><span class="muted">${(inclGst(p.dailyCents, p.gstInclusive) / 100).toFixed(2)} $/day · ${r} (incl. GST)</span>${extra}</div>`;
 }
@@ -381,7 +385,7 @@ function renderResults() {
       <details>
         <summary class="line">
           <span class="rank" aria-label="${pos >= 0 ? `rank ${pos + 1}` : 'not ranked'}">${pos >= 0 ? pos + 1 : '–'}</span>
-          <span class="who"><span class="retailer">${esc(w.retailer)}</span><span class="plan">${esc(w.plan)}</span></span>
+          <span class="who"><span class="retailer">${esc(w.retailer)}</span><span class="plan">${esc(w.plan)}</span>${[o.elecPlan, o.gasPlan].filter((p) => p?.cardFlag).map((p) => `<span class="flag">${esc(p.cardFlag)}</span>`).join('')}</span>
           <span class="cost">${money0(o.annual)}<span class="per">/yr</span></span>
           <span class="diff ${o.isBaseline ? 'cur' : v > 0 ? 'pos' : v < 0 ? 'neg' : ''}">${esc(diff)}</span>
           <span class="chev" aria-hidden="true"></span><span class="sr">Learn more</span>
@@ -426,7 +430,7 @@ function quoteTodo() {
 function renderUnavailable() {
   const statusText = { not_available_automatically: 'Needs manual quote', needs_review: 'Needs review', automatic: 'Partly priced' };
   const rows = quoteTodo();
-  $('unavailableList').innerHTML = rows.map((p) => `<li><div><strong>${esc(p.name)}</strong> <span class="tag">${esc(p.snapshot ? `Snapshot only (${p.planCount} plans, retrieved ${new Date(p.snapshotRetrievedAt).toLocaleDateString('en-NZ', { timeZone: 'Pacific/Auckland' })}) – needs a manual quote` : p.partial ? `Partly priced (${p.planCount} plans) – rest needs a manual quote` : statusText[p.status] || p.status)}</span> <span class="small muted">${esc((p.fuels || []).join(' + '))}</span></div>
+  $('unavailableList').innerHTML = rows.map((p) => `<li><div><strong>${esc(p.name)}</strong> <span class="tag">${esc(p.snapshot ? `Snapshot only (${p.planCount} plans, retrieved ${new Date(p.snapshotRetrievedAt).toLocaleDateString('en-NZ', { timeZone: 'Pacific/Auckland' })}) – needs a manual quote` : p.partial ? `Partly priced (${p.planCount} plans) – rest needs a manual quote` : p.manualStatus ? `Not priced: ${p.manualStatus}` : statusText[p.status] || p.status)}</span> <span class="small muted">${esc((p.fuels || []).join(' + '))}</span></div>
     <div class="small">${esc(p.reason || '')}</div>
     <div class="small"><a href="${esc(p.quoteUrl)}" target="_blank" rel="noopener">${esc(p.name)} quote page ↗</a>${p.quoteUrl !== p.url ? ` · <a href="${esc(p.url)}" target="_blank" rel="noopener">pricing page ↗</a>` : ''} <span class="muted">· checked ${fmtDateTime(p.checkedAt)}</span></div></li>`).join('') || '<li class="muted small">None.</li>';
   const closed = (DATA.providers || []).filter((p) => p.status === 'closed' || p.closedToNewCustomers);

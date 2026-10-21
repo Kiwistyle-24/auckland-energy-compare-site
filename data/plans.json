@@ -11,7 +11,7 @@
     "Vector network (lines) charges are included as context only: they are part of every retail price, not a plan you can buy.",
     "Low-user (low fixed charge) plans are being phased out: see lowFixedCharge for the rule and its source.",
     "Quote snapshots (live quote disabled; shown as \"quote snapshot\" and flagged stale after 35 days; get a manual quote): Genesis Energy (15 plans, retrieved 21 Oct 2026), Contact Energy (4 plans, retrieved 21 Oct 2026), Mercury (9 plans, retrieved 21 Oct 2026), Powershop (2 plans, retrieved 21 Oct 2026).",
-    "Quote snapshots retrieved by hand in a browser at the property (never fetched by this app; shown as \"quote snapshot\", flagged stale after 35 days): Electric Kiwi (3 plans, retrieved 21 Oct 2026)."
+    "Quote snapshots retrieved by hand in a browser at the property (never fetched by this app; shown as \"quote snapshot\", flagged stale after 35 days): Electric Kiwi (3 plans, retrieved 21 Oct 2026), Nova Energy (5 plans, retrieved 21 Oct 2026), Octopus Energy NZ (4 plans, retrieved 21 Oct 2026), Ecotricity (4 plans, retrieved 21 Oct 2026)."
   ],
   "networkCharges": {
     "electricity": {
@@ -2004,6 +2004,608 @@
       "quoteFor": "Address-specific quote for one Vector-network Auckland property, retrieved by hand in a browser.",
       "userTypeNote": "not confirmed (shown the same for low and standard)",
       "snapshot": true
+    },
+    {
+      "region": "Vector network, Auckland",
+      "closedToNewCustomers": false,
+      "gstInclusive": true,
+      "publishedGst": "incl",
+      "termMonths": null,
+      "effectiveFrom": null,
+      "effectiveNote": "No \"effective from\" date given in the retailer's quote; rates are those quoted on the retrieval date.",
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property, retrieved by hand in browser via retailer quote flow.",
+      "snapshot": true,
+      "id": "nova-multisaver-standard",
+      "retailerId": "nova",
+      "provider": "Nova Energy",
+      "name": "Electricity Multisaver",
+      "fuel": "electricity",
+      "userType": "standard",
+      "variantGroup": "nova-electricity-multisaver",
+      "dailyCents": 345.682,
+      "rates": {
+        "anytime": 29.555
+      },
+      "levyCentsPerKwh": 0.276,
+      "fixedTerm": false,
+      "exitFee": "None (no term, no break fee)",
+      "discounts": {
+        "bundle": {
+          "noDiscount": true,
+          "note": "Nova Multisaver power + Nova gas counts as dual fuel; no extra dual-fuel discount was shown, so none is costed"
+        }
+      },
+      "bundleGroup": "nova",
+      "requiresOtherService": [
+        "gas",
+        "broadband",
+        "mobile"
+      ],
+      "conditions": [
+        "Multisaver: needs gas, broadband or mobile with Nova on the same account; if the other service stops, it reverts to the Electricity Only plan. Ranked only with Nova gas, or if you tick broadband/mobile from the same retailer.",
+        "Nova Multisaver power + Nova gas counts as dual fuel (no extra dual-fuel discount was shown).",
+        "No term, no break fee; prices are not fixed; single flat (composite) rate, no time bands; no prompt-payment discount (late payment fee $25).",
+        "EA levy 0.276c/kWh (incl. GST) is charged on top of the composite rate and is included in the cost here.",
+        "Promo code REWARDS26 (Multisaver Rewards) is advertised on Nova's home page; it was not applied in the quote and is not costed.",
+        "Nova quote prices shown incl. GST (excl. GST toggle also available).",
+        "Quote snapshot: retrieved by hand in browser via retailer quote flow at the property's address on 21 Oct 2026 (~9:10pm NZDT); never fetched by this app. Confirm current rates with Nova Energy before switching."
+      ],
+      "source": {
+        "method": "snapshot",
+        "url": "https://novaenergy.my.salesforce-sites.com/WebResApplication",
+        "retrievedAt": "2026-10-21T08:10:00.000Z",
+        "label": "Nova Energy: quote snapshot (retrieved by hand in browser via retailer quote flow at the property)",
+        "note": "retrieved by hand in browser via retailer quote flow"
+      }
+    },
+    {
+      "region": "Vector network, Auckland",
+      "closedToNewCustomers": false,
+      "gstInclusive": true,
+      "publishedGst": "incl",
+      "termMonths": null,
+      "effectiveFrom": null,
+      "effectiveNote": "No \"effective from\" date given in the retailer's quote; rates are those quoted on the retrieval date.",
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property, retrieved by hand in browser via retailer quote flow.",
+      "snapshot": true,
+      "id": "nova-electricity-only-standard",
+      "retailerId": "nova",
+      "provider": "Nova Energy",
+      "name": "Electricity Only",
+      "fuel": "electricity",
+      "userType": "standard",
+      "variantGroup": "nova-electricity-only",
+      "dailyCents": 363.876,
+      "rates": {
+        "anytime": 31.11
+      },
+      "levyCentsPerKwh": 0.276,
+      "fixedTerm": false,
+      "exitFee": "None (no term, no break fee)",
+      "discounts": {},
+      "conditions": [
+        "No term, no break fee; prices are not fixed; single flat (composite) rate, no time bands; no prompt-payment discount (late payment fee $25).",
+        "EA levy 0.276c/kWh (incl. GST) is charged on top of the composite rate and is included in the cost here.",
+        "Promo code REWARDS26 (Multisaver Rewards) is advertised on Nova's home page; it was not applied in the quote and is not costed.",
+        "Nova quote prices shown incl. GST (excl. GST toggle also available).",
+        "Quote snapshot: retrieved by hand in browser via retailer quote flow at the property's address on 21 Oct 2026 (~9:10pm NZDT); never fetched by this app. Confirm current rates with Nova Energy before switching."
+      ],
+      "source": {
+        "method": "snapshot",
+        "url": "https://novaenergy.my.salesforce-sites.com/WebResApplication",
+        "retrievedAt": "2026-10-21T08:10:00.000Z",
+        "label": "Nova Energy: quote snapshot (retrieved by hand in browser via retailer quote flow at the property)",
+        "note": "retrieved by hand in browser via retailer quote flow"
+      }
+    },
+    {
+      "region": "Vector network, Auckland",
+      "closedToNewCustomers": false,
+      "gstInclusive": true,
+      "publishedGst": "incl",
+      "termMonths": null,
+      "effectiveFrom": null,
+      "effectiveNote": "No \"effective from\" date given in the retailer's quote; rates are those quoted on the retrieval date.",
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property, retrieved by hand in browser via retailer quote flow.",
+      "snapshot": true,
+      "id": "nova-multisaver-low",
+      "retailerId": "nova",
+      "provider": "Nova Energy",
+      "name": "Electricity Multisaver",
+      "fuel": "electricity",
+      "userType": "low",
+      "variantGroup": "nova-electricity-multisaver",
+      "dailyCents": 207,
+      "rates": {
+        "anytime": 35.882
+      },
+      "levyCentsPerKwh": 0.276,
+      "fixedTerm": false,
+      "exitFee": "None (no term, no break fee)",
+      "discounts": {
+        "bundle": {
+          "noDiscount": true,
+          "note": "Nova Multisaver power + Nova gas counts as dual fuel; no extra dual-fuel discount was shown, so none is costed"
+        }
+      },
+      "bundleGroup": "nova",
+      "requiresOtherService": [
+        "gas",
+        "broadband",
+        "mobile"
+      ],
+      "conditions": [
+        "Multisaver: needs gas, broadband or mobile with Nova on the same account; if the other service stops, it reverts to the Electricity Only plan. Ranked only with Nova gas, or if you tick broadband/mobile from the same retailer.",
+        "Nova Multisaver power + Nova gas counts as dual fuel (no extra dual-fuel discount was shown).",
+        "No term, no break fee; prices are not fixed; single flat (composite) rate, no time bands; no prompt-payment discount (late payment fee $25).",
+        "EA levy 0.276c/kWh (incl. GST) is charged on top of the composite rate and is included in the cost here.",
+        "Promo code REWARDS26 (Multisaver Rewards) is advertised on Nova's home page; it was not applied in the quote and is not costed.",
+        "Nova quote prices shown incl. GST (excl. GST toggle also available).",
+        "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans.",
+        "Quote snapshot: retrieved by hand in browser via retailer quote flow at the property's address on 21 Oct 2026 (~9:10pm NZDT); never fetched by this app. Confirm current rates with Nova Energy before switching."
+      ],
+      "source": {
+        "method": "snapshot",
+        "url": "https://novaenergy.my.salesforce-sites.com/WebResApplication",
+        "retrievedAt": "2026-10-21T08:10:00.000Z",
+        "label": "Nova Energy: quote snapshot (retrieved by hand in browser via retailer quote flow at the property)",
+        "note": "retrieved by hand in browser via retailer quote flow"
+      }
+    },
+    {
+      "region": "Vector network, Auckland",
+      "closedToNewCustomers": false,
+      "gstInclusive": true,
+      "publishedGst": "incl",
+      "termMonths": null,
+      "effectiveFrom": null,
+      "effectiveNote": "No \"effective from\" date given in the retailer's quote; rates are those quoted on the retrieval date.",
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property, retrieved by hand in browser via retailer quote flow.",
+      "snapshot": true,
+      "id": "nova-electricity-only-low",
+      "retailerId": "nova",
+      "provider": "Nova Energy",
+      "name": "Electricity Only",
+      "fuel": "electricity",
+      "userType": "low",
+      "variantGroup": "nova-electricity-only",
+      "dailyCents": 207,
+      "rates": {
+        "anytime": 38.267
+      },
+      "levyCentsPerKwh": 0.276,
+      "fixedTerm": false,
+      "exitFee": "None (no term, no break fee)",
+      "discounts": {},
+      "conditions": [
+        "No term, no break fee; prices are not fixed; single flat (composite) rate, no time bands; no prompt-payment discount (late payment fee $25).",
+        "EA levy 0.276c/kWh (incl. GST) is charged on top of the composite rate and is included in the cost here.",
+        "Promo code REWARDS26 (Multisaver Rewards) is advertised on Nova's home page; it was not applied in the quote and is not costed.",
+        "Nova quote prices shown incl. GST (excl. GST toggle also available).",
+        "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans.",
+        "Quote snapshot: retrieved by hand in browser via retailer quote flow at the property's address on 21 Oct 2026 (~9:10pm NZDT); never fetched by this app. Confirm current rates with Nova Energy before switching."
+      ],
+      "source": {
+        "method": "snapshot",
+        "url": "https://novaenergy.my.salesforce-sites.com/WebResApplication",
+        "retrievedAt": "2026-10-21T08:10:00.000Z",
+        "label": "Nova Energy: quote snapshot (retrieved by hand in browser via retailer quote flow at the property)",
+        "note": "retrieved by hand in browser via retailer quote flow"
+      }
+    },
+    {
+      "region": "Vector network, Auckland",
+      "closedToNewCustomers": false,
+      "gstInclusive": true,
+      "publishedGst": "incl",
+      "termMonths": null,
+      "effectiveFrom": null,
+      "effectiveNote": "No \"effective from\" date given in the retailer's quote; rates are those quoted on the retrieval date.",
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property, retrieved by hand in browser via retailer quote flow.",
+      "snapshot": true,
+      "id": "nova-gas-multisaver-standard",
+      "retailerId": "nova",
+      "provider": "Nova Energy",
+      "name": "Gas Multisaver",
+      "fuel": "gas",
+      "userType": "standard",
+      "variantGroup": "nova-gas-multisaver",
+      "dailyCents": 231.287,
+      "levyCentsPerDay": 1.725,
+      "rates": {
+        "anytime": 15.052
+      },
+      "fixedTerm": false,
+      "exitFee": "None (no term, no break fee)",
+      "discounts": {
+        "bundle": {
+          "noDiscount": true,
+          "note": "Nova Multisaver power + Nova gas counts as dual fuel; no extra dual-fuel discount was shown, so none is costed"
+        }
+      },
+      "bundleGroup": "nova",
+      "conditions": [
+        "Gas Multisaver (standard user): daily 231.287c + GIC levy 1.725c/day (included here), 15.052c/kWh, incl. GST.",
+        "Nova Multisaver power + Nova gas counts as dual fuel (no extra dual-fuel discount was shown). Whether Gas Multisaver needs another Nova service was not shown.",
+        "No term, no break fee; prices are not fixed; no prompt-payment discount.",
+        "Promo code REWARDS26 (Multisaver Rewards) is advertised on Nova's home page; it was not applied in the quote and is not costed.",
+        "Quote snapshot: retrieved by hand in browser via retailer quote flow at the property's address on 21 Oct 2026 (~9:10pm NZDT); never fetched by this app. Confirm current rates with Nova Energy before switching."
+      ],
+      "source": {
+        "method": "snapshot",
+        "url": "https://novaenergy.my.salesforce-sites.com/WebResApplication",
+        "retrievedAt": "2026-10-21T08:10:00.000Z",
+        "label": "Nova Energy: quote snapshot (retrieved by hand in browser via retailer quote flow at the property)",
+        "note": "retrieved by hand in browser via retailer quote flow"
+      }
+    },
+    {
+      "region": "Vector network, Auckland",
+      "closedToNewCustomers": false,
+      "gstInclusive": true,
+      "publishedGst": "incl",
+      "termMonths": null,
+      "effectiveFrom": null,
+      "effectiveNote": "No \"effective from\" date given in the retailer's quote; rates are those quoted on the retrieval date.",
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property, retrieved by hand in browser via retailer quote flow.",
+      "snapshot": true,
+      "id": "octopus-flexi-standard",
+      "retailerId": "octopus",
+      "provider": "Octopus Energy NZ",
+      "name": "OctopusFlexi",
+      "fuel": "electricity",
+      "userType": "standard",
+      "variantGroup": "octopus-flexi",
+      "dailyCents": 363.814,
+      "rates": {
+        "peak": 32.0735,
+        "offpeak": 24.0235,
+        "night": 16.031
+      },
+      "timeBands": {
+        "peak": "weekdays 7–11am and 5–9pm",
+        "offpeak": "weekdays 11am–5pm and 9–11pm; weekends 7am–11pm",
+        "night": "every day 11pm–7am"
+      },
+      "fixedTerm": false,
+      "exitFee": "None (no break or exit fees)",
+      "discounts": {},
+      "conditions": [
+        "OctopusFlexi time bands: weekdays peak 7–11am and 5–9pm, off-peak 11am–5pm and 9–11pm; night 11pm–7am every day; weekends off-peak 7am–11pm.",
+        "No break or exit fees; rates not fixed; no term; no credits or discounts shown. Rates include the EA levy.",
+        "Octopus quote prices incl. GST; the unrounded values (page option \"Show rates rounded\" off) are used.",
+        "Electricity only (no gas from Octopus); paired with your current gas.",
+        "Quote snapshot: retrieved by hand in browser via retailer quote flow at the property's address on 21 Oct 2026 (~9:10pm NZDT); never fetched by this app. Confirm current rates with Octopus Energy NZ before switching."
+      ],
+      "source": {
+        "method": "snapshot",
+        "url": "https://octopusenergy.nz/signup?rates",
+        "retrievedAt": "2026-10-21T08:10:00.000Z",
+        "label": "Octopus Energy NZ: quote snapshot (retrieved by hand in browser via retailer quote flow at the property)",
+        "note": "retrieved by hand in browser via retailer quote flow"
+      }
+    },
+    {
+      "region": "Vector network, Auckland",
+      "closedToNewCustomers": false,
+      "gstInclusive": true,
+      "publishedGst": "incl",
+      "termMonths": null,
+      "effectiveFrom": null,
+      "effectiveNote": "No \"effective from\" date given in the retailer's quote; rates are those quoted on the retrieval date.",
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property, retrieved by hand in browser via retailer quote flow.",
+      "snapshot": true,
+      "id": "octopus-freelunch-standard",
+      "retailerId": "octopus",
+      "provider": "Octopus Energy NZ",
+      "name": "Octopus Free Lunch",
+      "fuel": "electricity",
+      "userType": "standard",
+      "variantGroup": "octopus-freelunch",
+      "dailyCents": 363.814,
+      "rates": {
+        "peak": 35.7995,
+        "offpeak": 25.6335
+      },
+      "freeHours": true,
+      "timeBands": {
+        "peak": "every day 7–11am and 5–9pm",
+        "free": "every day 11am–2pm",
+        "offpeak": "every day 2–5pm and 9pm–7am"
+      },
+      "fixedTerm": false,
+      "exitFee": "None (no break or exit fees)",
+      "discounts": {},
+      "conditions": [
+        "Octopus Free Lunch (every day): peak 7–11am and 5–9pm; free power 11am–2pm ($0.00/kWh); off-peak 2–5pm and 9pm–7am.",
+        "No break or exit fees; rates not fixed; no term; no credits or discounts shown. Rates include the EA levy.",
+        "Octopus quote prices incl. GST; the unrounded values (page option \"Show rates rounded\" off) are used.",
+        "Electricity only (no gas from Octopus); paired with your current gas.",
+        "Quote snapshot: retrieved by hand in browser via retailer quote flow at the property's address on 21 Oct 2026 (~9:10pm NZDT); never fetched by this app. Confirm current rates with Octopus Energy NZ before switching."
+      ],
+      "source": {
+        "method": "snapshot",
+        "url": "https://octopusenergy.nz/signup?rates",
+        "retrievedAt": "2026-10-21T08:10:00.000Z",
+        "label": "Octopus Energy NZ: quote snapshot (retrieved by hand in browser via retailer quote flow at the property)",
+        "note": "retrieved by hand in browser via retailer quote flow"
+      }
+    },
+    {
+      "region": "Vector network, Auckland",
+      "closedToNewCustomers": false,
+      "gstInclusive": true,
+      "publishedGst": "incl",
+      "termMonths": null,
+      "effectiveFrom": null,
+      "effectiveNote": "No \"effective from\" date given in the retailer's quote; rates are those quoted on the retrieval date.",
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property, retrieved by hand in browser via retailer quote flow.",
+      "snapshot": true,
+      "id": "octopus-flexi-low",
+      "retailerId": "octopus",
+      "provider": "Octopus Energy NZ",
+      "name": "OctopusFlexi",
+      "fuel": "electricity",
+      "userType": "low",
+      "variantGroup": "octopus-flexi",
+      "dailyCents": 172.5,
+      "rates": {
+        "peak": 42.3775,
+        "offpeak": 34.3275,
+        "night": 21.1945
+      },
+      "timeBands": {
+        "peak": "weekdays 7–11am and 5–9pm",
+        "offpeak": "weekdays 11am–5pm and 9–11pm; weekends 7am–11pm",
+        "night": "every day 11pm–7am"
+      },
+      "fixedTerm": false,
+      "exitFee": "None (no break or exit fees)",
+      "discounts": {},
+      "conditions": [
+        "OctopusFlexi time bands: weekdays peak 7–11am and 5–9pm, off-peak 11am–5pm and 9–11pm; night 11pm–7am every day; weekends off-peak 7am–11pm.",
+        "No break or exit fees; rates not fixed; no term; no credits or discounts shown. Rates include the EA levy.",
+        "Octopus quote prices incl. GST; the unrounded values (page option \"Show rates rounded\" off) are used.",
+        "Electricity only (no gas from Octopus); paired with your current gas.",
+        "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans.",
+        "Quote snapshot: retrieved by hand in browser via retailer quote flow at the property's address on 21 Oct 2026 (~9:10pm NZDT); never fetched by this app. Confirm current rates with Octopus Energy NZ before switching."
+      ],
+      "source": {
+        "method": "snapshot",
+        "url": "https://octopusenergy.nz/signup?rates",
+        "retrievedAt": "2026-10-21T08:10:00.000Z",
+        "label": "Octopus Energy NZ: quote snapshot (retrieved by hand in browser via retailer quote flow at the property)",
+        "note": "retrieved by hand in browser via retailer quote flow"
+      }
+    },
+    {
+      "region": "Vector network, Auckland",
+      "closedToNewCustomers": false,
+      "gstInclusive": true,
+      "publishedGst": "incl",
+      "termMonths": null,
+      "effectiveFrom": null,
+      "effectiveNote": "No \"effective from\" date given in the retailer's quote; rates are those quoted on the retrieval date.",
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property, retrieved by hand in browser via retailer quote flow.",
+      "snapshot": true,
+      "id": "octopus-freelunch-low",
+      "retailerId": "octopus",
+      "provider": "Octopus Energy NZ",
+      "name": "Octopus Free Lunch",
+      "fuel": "electricity",
+      "userType": "low",
+      "variantGroup": "octopus-freelunch",
+      "dailyCents": 172.5,
+      "rates": {
+        "peak": 46.989,
+        "offpeak": 36.823
+      },
+      "freeHours": true,
+      "timeBands": {
+        "peak": "every day 7–11am and 5–9pm",
+        "free": "every day 11am–2pm",
+        "offpeak": "every day 2–5pm and 9pm–7am"
+      },
+      "fixedTerm": false,
+      "exitFee": "None (no break or exit fees)",
+      "discounts": {},
+      "conditions": [
+        "Octopus Free Lunch (every day): peak 7–11am and 5–9pm; free power 11am–2pm ($0.00/kWh); off-peak 2–5pm and 9pm–7am.",
+        "No break or exit fees; rates not fixed; no term; no credits or discounts shown. Rates include the EA levy.",
+        "Octopus quote prices incl. GST; the unrounded values (page option \"Show rates rounded\" off) are used.",
+        "Electricity only (no gas from Octopus); paired with your current gas.",
+        "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans.",
+        "Quote snapshot: retrieved by hand in browser via retailer quote flow at the property's address on 21 Oct 2026 (~9:10pm NZDT); never fetched by this app. Confirm current rates with Octopus Energy NZ before switching."
+      ],
+      "source": {
+        "method": "snapshot",
+        "url": "https://octopusenergy.nz/signup?rates",
+        "retrievedAt": "2026-10-21T08:10:00.000Z",
+        "label": "Octopus Energy NZ: quote snapshot (retrieved by hand in browser via retailer quote flow at the property)",
+        "note": "retrieved by hand in browser via retailer quote flow"
+      }
+    },
+    {
+      "region": "Vector network, Auckland",
+      "closedToNewCustomers": false,
+      "gstInclusive": true,
+      "publishedGst": "incl",
+      "termMonths": null,
+      "effectiveFrom": null,
+      "effectiveNote": "No \"effective from\" date given in the retailer's quote; rates are those quoted on the retrieval date.",
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property, retrieved by hand in browser via retailer quote flow.",
+      "snapshot": true,
+      "id": "ecotricity-ecosaver-low",
+      "retailerId": "ecotricity",
+      "provider": "Ecotricity",
+      "name": "Low ecoSAVER",
+      "fuel": "electricity",
+      "userType": "low",
+      "variantGroup": "ecotricity-ecosaver",
+      "dailyCents": 178.25,
+      "rates": {
+        "peak": 32.67,
+        "offpeak": 31.09
+      },
+      "timeBands": {
+        "peak": "7–11am and 5–9pm (weekday chart; weekends assumed the same)",
+        "offpeak": "9pm–7am and 11am–5pm (weekday chart; weekends assumed the same)"
+      },
+      "cardFlag": "seasonal rates; only Oct–Dec captured; other months may differ · weekends assumed same as weekdays",
+      "seasonalCaptured": "10/2026–12/2026",
+      "fixedTerm": null,
+      "exitFee": null,
+      "discounts": {},
+      "conditions": [
+        "Seasonal rates; only Oct–Dec captured; other months may differ. The Oct–Dec 2026 rates are applied to every month here.",
+        "Only the weekday (Mon–Fri) chart was read; weekends are assumed to be the same as weekdays.",
+        "Contract term, exit fees and credits were not shown in the price flow.",
+        "Rates read from the \"Enlarge graph\" chart text for 10/2026–12/2026 (small print, cross-checked against the saved screenshots); prices incl. GST.",
+        "Export (solar buy-back) rate shown: −15.80c/kWh (not used here).",
+        "Electricity only (no gas from Ecotricity); paired with your current gas.",
+        "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans.",
+        "Quote snapshot: retrieved by hand in browser via retailer quote flow at the property's address on 21 Oct 2026 (~9:10pm NZDT); never fetched by this app. Confirm current rates with Ecotricity before switching."
+      ],
+      "source": {
+        "method": "snapshot",
+        "url": "https://onboarding.ecotricity.co.nz/plan",
+        "retrievedAt": "2026-10-21T08:10:00.000Z",
+        "label": "Ecotricity: quote snapshot (retrieved by hand in browser via retailer quote flow at the property)",
+        "note": "retrieved by hand in browser via retailer quote flow"
+      }
+    },
+    {
+      "region": "Vector network, Auckland",
+      "closedToNewCustomers": false,
+      "gstInclusive": true,
+      "publishedGst": "incl",
+      "termMonths": null,
+      "effectiveFrom": null,
+      "effectiveNote": "No \"effective from\" date given in the retailer's quote; rates are those quoted on the retrieval date.",
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property, retrieved by hand in browser via retailer quote flow.",
+      "snapshot": true,
+      "id": "ecotricity-ecoanytime-low",
+      "retailerId": "ecotricity",
+      "provider": "Ecotricity",
+      "name": "Low ecoANYTIME",
+      "fuel": "electricity",
+      "userType": "low",
+      "variantGroup": "ecotricity-ecoanytime",
+      "dailyCents": 178.25,
+      "rates": {
+        "anytime": 30.01
+      },
+      "cardFlag": "seasonal rates; only Oct–Dec captured; other months may differ",
+      "seasonalCaptured": "10/2026–12/2026",
+      "fixedTerm": null,
+      "exitFee": null,
+      "discounts": {},
+      "conditions": [
+        "Seasonal rates; only Oct–Dec captured; other months may differ. The Oct–Dec 2026 rates are applied to every month here.",
+        "Contract term, exit fees and credits were not shown in the price flow.",
+        "Rates read from the \"Enlarge graph\" chart text for 10/2026–12/2026 (small print, cross-checked against the saved screenshots); prices incl. GST.",
+        "Export (solar buy-back) rate shown: −15.80c/kWh (not used here).",
+        "Electricity only (no gas from Ecotricity); paired with your current gas.",
+        "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans.",
+        "Quote snapshot: retrieved by hand in browser via retailer quote flow at the property's address on 21 Oct 2026 (~9:10pm NZDT); never fetched by this app. Confirm current rates with Ecotricity before switching."
+      ],
+      "source": {
+        "method": "snapshot",
+        "url": "https://onboarding.ecotricity.co.nz/plan",
+        "retrievedAt": "2026-10-21T08:10:00.000Z",
+        "label": "Ecotricity: quote snapshot (retrieved by hand in browser via retailer quote flow at the property)",
+        "note": "retrieved by hand in browser via retailer quote flow"
+      }
+    },
+    {
+      "region": "Vector network, Auckland",
+      "closedToNewCustomers": false,
+      "gstInclusive": true,
+      "publishedGst": "incl",
+      "termMonths": null,
+      "effectiveFrom": null,
+      "effectiveNote": "No \"effective from\" date given in the retailer's quote; rates are those quoted on the retrieval date.",
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property, retrieved by hand in browser via retailer quote flow.",
+      "snapshot": true,
+      "id": "ecotricity-ecosaver-standard",
+      "retailerId": "ecotricity",
+      "provider": "Ecotricity",
+      "name": "ecoSAVER",
+      "fuel": "electricity",
+      "userType": "standard",
+      "variantGroup": "ecotricity-ecosaver",
+      "dailyCents": 318.78,
+      "rates": {
+        "peak": 25.97,
+        "offpeak": 24.88
+      },
+      "timeBands": {
+        "peak": "7–11am and 5–9pm (weekday chart; weekends assumed the same)",
+        "offpeak": "9pm–7am and 11am–5pm (weekday chart; weekends assumed the same)"
+      },
+      "cardFlag": "seasonal rates; only Oct–Dec captured; other months may differ · weekends assumed same as weekdays",
+      "seasonalCaptured": "10/2026–12/2026",
+      "fixedTerm": null,
+      "exitFee": null,
+      "discounts": {},
+      "conditions": [
+        "Seasonal rates; only Oct–Dec captured; other months may differ. The Oct–Dec 2026 rates are applied to every month here.",
+        "Only the weekday (Mon–Fri) chart was read; weekends are assumed to be the same as weekdays.",
+        "Contract term, exit fees and credits were not shown in the price flow.",
+        "Rates read from the \"Enlarge graph\" chart text for 10/2026–12/2026 (small print, cross-checked against the saved screenshots); prices incl. GST.",
+        "Export (solar buy-back) rate shown: −15.80c/kWh (not used here).",
+        "Electricity only (no gas from Ecotricity); paired with your current gas.",
+        "Quote snapshot: retrieved by hand in browser via retailer quote flow at the property's address on 21 Oct 2026 (~9:10pm NZDT); never fetched by this app. Confirm current rates with Ecotricity before switching."
+      ],
+      "source": {
+        "method": "snapshot",
+        "url": "https://onboarding.ecotricity.co.nz/plan",
+        "retrievedAt": "2026-10-21T08:10:00.000Z",
+        "label": "Ecotricity: quote snapshot (retrieved by hand in browser via retailer quote flow at the property)",
+        "note": "retrieved by hand in browser via retailer quote flow"
+      }
+    },
+    {
+      "region": "Vector network, Auckland",
+      "closedToNewCustomers": false,
+      "gstInclusive": true,
+      "publishedGst": "incl",
+      "termMonths": null,
+      "effectiveFrom": null,
+      "effectiveNote": "No \"effective from\" date given in the retailer's quote; rates are those quoted on the retrieval date.",
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property, retrieved by hand in browser via retailer quote flow.",
+      "snapshot": true,
+      "id": "ecotricity-ecoanytime-standard",
+      "retailerId": "ecotricity",
+      "provider": "Ecotricity",
+      "name": "ecoANYTIME",
+      "fuel": "electricity",
+      "userType": "standard",
+      "variantGroup": "ecotricity-ecoanytime",
+      "dailyCents": 318.78,
+      "rates": {
+        "anytime": 24.62
+      },
+      "cardFlag": "seasonal rates; only Oct–Dec captured; other months may differ",
+      "seasonalCaptured": "10/2026–12/2026",
+      "fixedTerm": null,
+      "exitFee": null,
+      "discounts": {},
+      "conditions": [
+        "Seasonal rates; only Oct–Dec captured; other months may differ. The Oct–Dec 2026 rates are applied to every month here.",
+        "Contract term, exit fees and credits were not shown in the price flow.",
+        "Rates read from the \"Enlarge graph\" chart text for 10/2026–12/2026 (small print, cross-checked against the saved screenshots); prices incl. GST.",
+        "Export (solar buy-back) rate shown: −15.80c/kWh (not used here).",
+        "Electricity only (no gas from Ecotricity); paired with your current gas.",
+        "Quote snapshot: retrieved by hand in browser via retailer quote flow at the property's address on 21 Oct 2026 (~9:10pm NZDT); never fetched by this app. Confirm current rates with Ecotricity before switching."
+      ],
+      "source": {
+        "method": "snapshot",
+        "url": "https://onboarding.ecotricity.co.nz/plan",
+        "retrievedAt": "2026-10-21T08:10:00.000Z",
+        "label": "Ecotricity: quote snapshot (retrieved by hand in browser via retailer quote flow at the property)",
+        "note": "retrieved by hand in browser via retailer quote flow"
+      }
     }
   ],
   "providers": [
@@ -2183,17 +2785,18 @@
       ],
       "url": "https://www.novaenergy.co.nz/help-advice/billing-payments/what-are-your-energy-rates",
       "domains": [
-        "novaenergy.co.nz"
+        "novaenergy.co.nz",
+        "novaenergy.my.salesforce-sites.com"
       ],
       "status": "not_available_automatically",
-      "reason": "Nova shows pricing only after an address lookup in its join form, which runs on novaenergy.my.salesforce-sites.com; that site's robots.txt says \"Disallow: /\", so the lookup is not run automatically.",
-      "evidence": "You will be able to see pricing for your property when you enter your address here . Or, if you’re already a customer, see your bill for pricing information. Footer Residential Multisaver",
-      "manualQuote": {
-        "url": "https://www.novaenergy.co.nz/join"
-      },
-      "planCount": 0,
-      "checkedAt": "2026-10-21T02:21:27.145Z",
-      "httpStatus": 200
+      "reason": "Quote snapshot: the 5 plans (Electricity Multisaver and Electricity Only, low and standard; Gas Multisaver) were retrieved by hand in browser via retailer quote flow at the property's address on 21 Oct 2026 (novaenergy.my.salesforce-sites.com, whose robots.txt disallows automated access, so this app never fetches it). Prices incl. GST; the EA levy (0.276c/kWh) and gas GIC levy (1.725c/day) are included. Electricity Multisaver needs gas, broadband or mobile with Nova. Promo REWARDS26 not costed. Flagged stale after 35 days; then get a new quote and add it under \"Add a quote\".",
+      "snapshot": true,
+      "snapshotRetrievedAt": "2026-10-21T08:10:00.000Z",
+      "manualSnapshot": true,
+      "refreshUrl": "https://www.novaenergy.co.nz/join",
+      "planCount": 5,
+      "checkedAt": "2026-10-21T08:10:00.000Z",
+      "httpStatus": null
     },
     {
       "id": "pulse",
@@ -2207,13 +2810,14 @@
         "pulseenergy.co.nz"
       ],
       "status": "not_available_automatically",
-      "reason": "Pricing page could not be fetched (HTTP 403). The site blocks automated requests (HTTP 403); not retried or worked around.",
+      "reason": "Pricing page could not be fetched (HTTP 403). The site blocks automated requests (HTTP 403); not retried or worked around. Checked by hand in a browser on 21 Oct 2026 (~9:10pm NZDT): the site returns \"403 Forbidden\" to an ordinary browser too (pulseenergy.co.nz, www.pulseenergy.co.nz, /join, /power/plans), so no prices could be seen. Try the quote link later.",
       "manualQuote": {
         "url": "https://pulseenergy.co.nz/plans/"
       },
       "planCount": 0,
       "checkedAt": "2026-10-21T02:21:28.851Z",
-      "httpStatus": 403
+      "httpStatus": 403,
+      "manualStatus": "site returns 403 Forbidden to a browser"
     },
     {
       "id": "greypower",
@@ -2227,13 +2831,14 @@
         "greypowerelectricity.co.nz"
       ],
       "status": "not_available_automatically",
-      "reason": "Pricing page could not be fetched (HTTP 403). The site blocks automated requests (HTTP 403); not retried or worked around.",
+      "reason": "Pricing page could not be fetched (HTTP 403). The site blocks automated requests (HTTP 403); not retried or worked around. Checked by hand in a browser on 21 Oct 2026 (~9:10pm NZDT): the site returns \"403 Forbidden\" to an ordinary browser too (retried once), so no prices could be seen. Try the quote link later.",
       "manualQuote": {
         "url": "https://www.greypowerelectricity.co.nz/your-grey-power-plan/our-rates/"
       },
       "planCount": 0,
       "checkedAt": "2026-10-21T02:21:30.544Z",
-      "httpStatus": 403
+      "httpStatus": 403,
+      "manualStatus": "site returns 403 Forbidden to a browser"
     },
     {
       "id": "octopus",
@@ -2246,14 +2851,14 @@
         "octopusenergy.nz"
       ],
       "status": "not_available_automatically",
-      "reason": "Octopus shows rates only via its \"Get Rates\" address/ICP lookup, which calls octopusenergy.nz/api/ — disallowed by its robots.txt — so the lookup is not run automatically.",
-      "evidence": "s Blog Power Portal Get Rates Sign Up Support Log in Help Blog About us Legal Careers Contact us Flag for Great Britain Octopus Energy GB F",
-      "manualQuote": {
-        "url": "https://octopusenergy.nz/signup?rates"
-      },
-      "planCount": 0,
-      "checkedAt": "2026-10-21T02:21:32.379Z",
-      "httpStatus": 200
+      "reason": "Quote snapshot: the 4 plans (OctopusFlexi and Octopus Free Lunch, low and standard) were retrieved by hand in browser via retailer quote flow at the property's address on 21 Oct 2026 (octopusenergy.nz sign-up; its address lookup uses an API disallowed by robots.txt, so this app never runs it). Prices incl. GST, unrounded. No gas from Octopus. Flagged stale after 35 days; then get a new quote and add it under \"Add a quote\".",
+      "snapshot": true,
+      "snapshotRetrievedAt": "2026-10-21T08:10:00.000Z",
+      "manualSnapshot": true,
+      "refreshUrl": "https://octopusenergy.nz/signup?rates",
+      "planCount": 4,
+      "checkedAt": "2026-10-21T08:10:00.000Z",
+      "httpStatus": null
     },
     {
       "id": "ecotricity",
@@ -2266,14 +2871,14 @@
         "ecotricity.co.nz"
       ],
       "status": "not_available_automatically",
-      "reason": "Ecotricity prices depend on your lines company and meter and are shown only in its onboarding platform (onboarding.ecotricity.co.nz), whose robots.txt says \"Disallow: /\", so the lookup is not run automatically.",
-      "evidence": "ll weekend long. As pricing is specific to your lines company and meter type, simply enter your address in our onboarding platform to see what price plans are available to you before you",
-      "manualQuote": {
-        "url": "https://ecotricity.co.nz/for-home"
-      },
-      "planCount": 0,
-      "checkedAt": "2026-10-21T02:21:44.980Z",
-      "httpStatus": 200
+      "reason": "Quote snapshot: the 4 plans (ecoSAVER and ecoANYTIME, low and standard) were retrieved by hand in browser via retailer quote flow at the property's address on 21 Oct 2026 (onboarding.ecotricity.co.nz, whose robots.txt disallows automated access). Seasonal rates: only Oct–Dec 2026 captured and applied to every month; other months may differ. Weekday chart only; weekends assumed the same. Prices incl. GST. Flagged stale after 35 days.",
+      "snapshot": true,
+      "snapshotRetrievedAt": "2026-10-21T08:10:00.000Z",
+      "manualSnapshot": true,
+      "refreshUrl": "https://onboarding.ecotricity.co.nz/plan",
+      "planCount": 4,
+      "checkedAt": "2026-10-21T08:10:00.000Z",
+      "httpStatus": null
     },
     {
       "id": "twodegrees",
@@ -2286,14 +2891,15 @@
         "2degrees.nz"
       ],
       "status": "not_available_automatically",
-      "reason": "2degrees sells power only together with 2degrees broadband, and the rates appear only in its checkout (checkout.2degrees.nz), whose robots.txt says \"Disallow: /\", so they are not fetched automatically.",
+      "reason": "2degrees sells power only together with 2degrees broadband, and the rates appear only in its checkout (checkout.2degrees.nz), whose robots.txt says \"Disallow: /\", so they are not fetched automatically. Checked by hand in a browser on 21 Oct 2026 (~9:10pm NZDT): power is only sold bundled with a 2degrees broadband plan; the rates appear only after giving an email address in checkout (not entered), so no rates were seen. 2degrees advertises 10% off the power bill (and $10/month off broadband) while the bundle is kept; Standard and Low User power plans exist.",
       "evidence": "tart with Broadband Enter an address on the Broadband page 2. Choose a plan Pick a Broadband plan for your place 3. Add Power Hit the Add Power button at checkout Join",
       "manualQuote": {
         "url": "https://www.2degrees.nz/power"
       },
       "planCount": 0,
       "checkedAt": "2026-10-21T02:21:47.124Z",
-      "httpStatus": 200
+      "httpStatus": 200,
+      "manualStatus": "bundle-only with broadband; rates only after giving an email"
     },
     {
       "id": "toast",
@@ -2402,13 +3008,14 @@
         "hanergy.co.nz"
       ],
       "status": "not_available_automatically",
-      "reason": "Pricing page could not be fetched (fetch failed). The site's TLS certificate failed validation (not bypassed). Its prices are not published as a rate card here; get a quote by hand.",
+      "reason": "Pricing page could not be fetched (fetch failed). The site's TLS certificate failed validation (not bypassed). Its prices are not published as a rate card here; get a quote by hand. Checked by hand in a browser on 21 Oct 2026 (~9:10pm NZDT): the browser also showed a certificate error (NET::ERR_CERT_AUTHORITY_INVALID on www.hanergy.co.nz and hanergy.co.nz, same after a reload), so the site was not opened and no prices were seen.",
       "manualQuote": {
         "url": "https://www.hanergy.co.nz/"
       },
       "planCount": 0,
       "checkedAt": "2026-10-21T02:19:33.630Z",
-      "httpStatus": null
+      "httpStatus": null,
+      "manualStatus": "certificate error in the browser"
     }
   ],
   "fetchErrors": [],
@@ -2837,6 +3444,62 @@
       "method": "GET",
       "retrievedAt": "2026-10-21T04:19:00.000Z",
       "status": "manual",
+      "httpStatus": null
+    },
+    {
+      "url": "https://novaenergy.my.salesforce-sites.com/WebResApplication",
+      "label": "Nova Energy: join form quote at the property, retrieved by hand in browser via retailer quote flow (quote snapshot)",
+      "status": "manual",
+      "method": "GET",
+      "retrievedAt": "2026-10-21T08:10:00.000Z",
+      "httpStatus": null
+    },
+    {
+      "url": "https://octopusenergy.nz/signup?rates",
+      "label": "Octopus Energy NZ: sign-up quote at the property, retrieved by hand in browser via retailer quote flow (quote snapshot; quote URL with the ICP not stored)",
+      "status": "manual",
+      "method": "GET",
+      "retrievedAt": "2026-10-21T08:10:00.000Z",
+      "httpStatus": null
+    },
+    {
+      "url": "https://onboarding.ecotricity.co.nz/plan",
+      "label": "Ecotricity: onboarding quote at the property, retrieved by hand in browser via retailer quote flow (quote snapshot; Oct–Dec 2026 weekday rates only)",
+      "status": "manual",
+      "method": "GET",
+      "retrievedAt": "2026-10-21T08:10:00.000Z",
+      "httpStatus": null
+    },
+    {
+      "url": "https://pulseenergy.co.nz/plans/",
+      "label": "Pulse Energy: checked by hand in a browser (403 Forbidden; not priced)",
+      "status": "manual",
+      "method": "GET",
+      "retrievedAt": "2026-10-21T08:10:00.000Z",
+      "httpStatus": null
+    },
+    {
+      "url": "https://www.greypowerelectricity.co.nz/",
+      "label": "Grey Power Electricity: checked by hand in a browser (403 Forbidden; not priced)",
+      "status": "manual",
+      "method": "GET",
+      "retrievedAt": "2026-10-21T08:10:00.000Z",
+      "httpStatus": null
+    },
+    {
+      "url": "https://www.hanergy.co.nz/",
+      "label": "Hanergy: checked by hand in a browser (certificate error; not opened, not priced)",
+      "status": "manual",
+      "method": "GET",
+      "retrievedAt": "2026-10-21T08:10:00.000Z",
+      "httpStatus": null
+    },
+    {
+      "url": "https://www.2degrees.nz/broadband/plans",
+      "label": "2degrees: checked by hand in a browser (power only bundled with broadband; rates only after giving an email in checkout; not priced)",
+      "status": "manual",
+      "method": "GET",
+      "retrievedAt": "2026-10-21T08:10:00.000Z",
       "httpStatus": null
     }
   ]
