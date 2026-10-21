@@ -306,7 +306,7 @@ export function mergeInvoices(list, opts = {}) {
     },
     default: {
       mode: 'seasonal', elecKwh: Math.round(eW.per30), gasKwh: Math.round(gW.per30),
-      shares: { night: 0.3, peak: 0.3, free: 0.1 }, sharesFromBills: false,
+      shares: { night: 0.3, peak: 0.3, free: 1 / 7 }, sharesFromBills: false, // free = e.g. free Sundays (1 day in 7)
       sharesNote: 'Your bills use a single anytime rate, so there is no day/night split. The night / peak / free-hour shares are assumptions used only to cost time-of-use plans. Change them to match your habits.',
     },
     annualFromBills: { elecKwh: eW.kwh, gasKwh: gW.kwh, window: `${isoDay(winStart)} to ${isoDay(lastEnd)}`, days: { electricity: eW.days, gas: gW.days } },

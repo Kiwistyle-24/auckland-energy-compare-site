@@ -1,8 +1,9 @@
 import { rankOffers, annualKwh, MONTH_NAMES, round2, inclGst, AVG_DAYS_PER_MONTH, isStale, STALE_DAYS, compareLowStandard, variantPairs, costOffer } from './calc.js';
 import { validatePlan, validateUsageFile } from './schema.js';
 import { parseGenesisInvoice, mergeInvoices, InvoiceError } from './genesis-invoice.js';
+import { parseHourlyCsv, mergeHourly, hourlyCoverage, planSharesFromHourly, looksLikeHourlyCsv, HourlyError, seasonCoverage, DEFAULT_WINTER_WEIGHTS, MON } from './hourly.js';
 
-const LS = { state: 'aec.state.v1', scenarios: 'aec.scenarios.v1', manual: 'aec.manualPlans.v1', usage: 'aec.myUsage.v1' };
+const LS = { state: 'aec.state.v1', scenarios: 'aec.scenarios.v1', manual: 'aec.manualPlans.v1', usage: 'aec.myUsage.v1', hourly: 'aec.hourlyUsage.v1' };
 // 'dev' when served by `npm run dev`; the public build (npm run build) rewrites this to 'public'.
 const BUILD = document.querySelector('meta[name=aec-build]')?.content || 'public';
 let USAGE_FROM = null; // 'file' (dev auto-load) | 'browser' (loaded by you, kept in localStorage)
@@ -21,11 +22,12 @@ let DATA = null;      // plans.json
 let USAGE = null;     // my-usage.json
 let state = null;     // current inputs
 let selectedId = null;
+let HOURLY = [];      // hourly kWh rows from Genesis hourly CSVs (this browser only)
 
 const defaultPrefs = () => ({ fuels: 'both', userType: 'any', pricing: 'any', term: 'any', dualFuel: 'any', promptPay: true, oneOffCredits: true, allow: [] });
 
 function billsScenario() {
-  const d = USAGE?.default || { mode: 'average', elecKwh: 0, gasKwh: 0, shares: { night: 0.3, peak: 0.3, free: 0 } };
+  const d = USAGE?.default || { mode: 'average', elecKwh: 0, gasKwh: 0, shares: { night: 0.3, peak: 0.3, free: 1 / 7 } };
   return {
     name: MY_BILLS,
     mode: USAGE?.months ? d.mode || 'seasonal' : 'average',
@@ -37,6 +39,12 @@ function billsScenario() {
 }
 
 const allPlans = () => [...(DATA?.plans || []), ...load(LS.manual, []).map((p) => ({ ...p, origin: 'browser' }))];
+const winterWeights = (s) => (Array.isArray(s.winterWeights) && s.winterWeights.length === 12 ? s.winterWeights : DEFAULT_WINTER_WEIGHTS);
+/** The scenario used for costing: adds per-plan time-of-use splits from your hourly data (unless turned off). */
+function costScenario(s) {
+  if (!HOURLY.length || s.useHourly === false) return s;
+  return { ...s, planShares: planSharesFromHourly([...allPlans(), ...(baseline()?.electricity ? [baseline().electricity] : [])], HOURLY, { winterWeights: winterWeights(s) }) };
+}
 const baseline = () => (USAGE?.currentPlan?.electricity ? { electricity: USAGE.currentPlan.electricity, gas: USAGE.currentPlan.gas || null } : null);
 
 async function init() {
@@ -50,9 +58,13 @@ async function init() {
   // Bills you loaded in this browser win over the dev auto-load file.
   if (stored) { USAGE = stored; USAGE_FROM = 'browser'; }
   else if (devUsage) { USAGE = devUsage; USAGE_FROM = 'file'; }
+  HOURLY = load(LS.hourly, []);
+  if (!Array.isArray(HOURLY)) HOURLY = [];
   bindBills();
   renderBillsSummary();
   state = load(LS.state, null) || billsScenario();
+  // v2: default free-hours share is 1/7 (free Sundays); move the old untouched 10% default over once.
+  if (state.shares && !state.freeShareV2) { if (state.shares.free === 0.1) state.shares.free = 1 / 7; state.freeShareV2 = true; }
   state.prefs = { ...defaultPrefs(), ...(state.prefs || {}) };
   renderBanner();
   bindInputs();
@@ -147,18 +159,20 @@ function renderInputs() {
   $('elecKwh').value = state.elecKwh; $('gasKwh').value = state.gasKwh;
   $('shareNight').value = Math.round((state.shares.night || 0) * 100);
   $('sharePeak').value = Math.round((state.shares.peak || 0) * 100);
-  $('shareFree').value = Math.round((state.shares.free || 0) * 100);
+  $('shareFree').value = Math.round((state.shares.free || 0) * 1000) / 10;
   $('prefUserType').value = state.prefs.userType; $('prefPricing').value = state.prefs.pricing;
   $('prefTerm').value = state.prefs.term; $('prefDual').value = state.prefs.dualFuel; $('prefPrompt').checked = state.prefs.promptPay !== false;
   $('prefFuels').value = state.prefs.fuels || 'both'; $('prefCredits').checked = state.prefs.oneOffCredits !== false; $('prefBroadband').checked = (state.prefs.allow || []).includes('broadband'); $('prefEv').checked = (state.prefs.allow || []).includes('ev');
   [['segFuels', 'fuels', 'both'], ['segUser', 'userType', 'any']].forEach(([id, k, d]) => $(id).querySelectorAll('button').forEach((btn) => btn.setAttribute('aria-pressed', String(btn.dataset.v === (state.prefs[k] || d)))));
   $('sharesNote').textContent = USAGE?.default?.sharesNote || 'These shares are assumptions. Edit them to match your habits.';
+  renderHourlyInfo();
   const u = USAGE;
   const from = USAGE_FROM === 'file' ? ' (auto-loaded from data/my-usage.json, local dev mode)' : USAGE_FROM === 'browser' ? (USAGE?.pdfImport ? ` (read from ${USAGE.pdfImport.invoices.length} PDF bill(s) in this browser, saved here only)` : ' (loaded from your file, saved in this browser)') : '';
   $('usageSource').innerHTML = u
     ? (u.isPlaceholder ? '⚠ <strong>Placeholder usage</strong>: fill in my-usage.json from your bills.' : `"My bills" uses figures from your ${esc(u.provider || 'energy')} bills${from}. ${esc(u.coverage?.months || '')}`)
     : '<strong>No bills file loaded.</strong> Click <em>Load my bills</em> (your Genesis PDF bills or a my-usage.json file) to use your own usage and current plan, or type your usage below.';
-  $('forgetBills').hidden = USAGE_FROM !== 'browser';
+  $('forgetBills').hidden = USAGE_FROM !== 'browser' && !HOURLY.length;
+  { const c = hourlyCoverage(HOURLY); if (c) $('usageSource').innerHTML += ` Hourly usage: ${esc(c.text)} (saved in this browser only).`; }
   // seasonal table
   const t = $('seasonalTable');
   t.innerHTML = `<thead><tr><th>Month</th>${MONTH_NAMES.map((m) => `<th>${m}</th>`).join('')}</tr></thead><tbody>
@@ -203,7 +217,7 @@ function offerSource(p) {
   if (!p) return '';
   const tag = p.source?.method === 'bill' ? '<span class="tag bill">your bill</span>' : p.source?.method === 'automatic' ? '<span class="tag auto">retailer website</span>' : p.source?.method === 'snapshot' ? '<span class="tag manual">quote snapshot</span>' : '<span class="tag manual">your quote</span>';
   const link = p.source?.url ? `<a href="${esc(p.source.url)}" target="_blank" rel="noopener">${esc(shortUrl(p.source.url))}</a>` : esc(p.source?.note || 'from your bills (no URL)');
-  return `<div class="src">${tag} ${link}<br>${p.source?.method === 'snapshot' ? `quote snapshot, retrieved ${fmtDate(p.source?.retrievedAt)} (no longer fetched automatically)` : `prices retrieved ${fmtDateTime(p.source?.retrievedAt)}`}${staleTag(p.source?.retrievedAt)}${p.stale ? ' <span class="tag stale">last fetch failed: older prices</span>' : ''}${effectiveCell(p) ? `<br>${esc(effectiveCell(p))}` : ''}</div>`;
+  return `<div class="src">${tag} ${link}<br>${p.source?.method === 'snapshot' ? `quote snapshot, retrieved ${fmtDate(p.source?.retrievedAt)} (${(DATA.providers || []).find((x) => x.id === p.retailerId)?.manualSnapshot ? 'retrieved by hand in a browser; never fetched automatically' : 'no longer fetched automatically'})` : `prices retrieved ${fmtDateTime(p.source?.retrievedAt)}`}${staleTag(p.source?.retrievedAt)}${p.stale ? ' <span class="tag stale">last fetch failed: older prices</span>' : ''}${effectiveCell(p) ? `<br>${esc(effectiveCell(p))}` : ''}</div>`;
 }
 function conditionsList(o) {
   const items = [];
@@ -232,13 +246,13 @@ function rateLine(p) {
     extra = `<br><span class="muted small">Seasonal: ${Math.min(...all).toFixed(2)}–${Math.max(...all).toFixed(2)}c/kWh across the year (rates shown are this month's)</span>`;
   }
   if (p.timeBands) extra += `<br><span class="muted small">Time bands: ${esc(Object.entries(p.timeBands).filter(([, v]) => v).map(([k, v]) => `${k} ${v}`).join('; '))}</span>`;
-  if (p.requires?.length) extra += `<br><span class="tag manual">needs ${esc(p.requires.map((x) => (x === 'ev' ? 'an EV' : 'same-retailer broadband')).join(' + '))}</span>`;
+  if (p.requires?.length) extra += `<br><span class="tag manual">needs ${esc(p.requires.map((x) => (x === 'ev' ? 'an EV' : 'same-retailer broadband or mobile (bundle)')).join(' + '))}</span>`;
   return `<div class="rates"><strong>${p.fuel === 'gas' ? 'Gas' : 'Power'}:</strong> ${esc(p.provider)} – ${esc(p.name)} ${userTag(p)}<br><span class="muted">${(inclGst(p.dailyCents, p.gstInclusive) / 100).toFixed(2)} $/day · ${r} (incl. GST)</span>${extra}</div>`;
 }
 
 function renderResults() {
   const prefs = state.prefs;
-  const offers = rankOffers(allPlans(), state, prefs, baseline());
+  const offers = rankOffers(allPlans(), costScenario(state), prefs, baseline());
   const fuelsLabel = { both: 'electricity + gas', electricity: 'electricity only', gas: 'gas only' }[prefs.fuels || 'both'];
   const a = annualKwh(state);
   $('resultsFor').textContent = `(${fuelsLabel}; ${prefs.fuels === 'gas' ? '' : Math.round(a.elec).toLocaleString('en-NZ') + ' kWh power'}${prefs.fuels === 'both' ? ' and ' : ''}${prefs.fuels === 'electricity' ? '' : Math.round(a.gas).toLocaleString('en-NZ') + ' kWh gas'} a year)`;
@@ -271,7 +285,7 @@ function renderResults() {
       <div class="offer-head">
         <span class="rank">${o.rank}</span>
         <div class="who"><strong>${esc(o.label)}</strong>
-          <div>${ut === 'low' ? '<span class="tag">LOW USER</span>' : ut === 'standard' ? '<span class="tag">STANDARD USER</span>' : ''}${o.isBaseline ? '<span class="tag bill">current</span>' : ''}${o.bundle ? '<span class="tag">dual fuel</span>' : ''}${o.closed ? '<span class="tag stale">CLOSED TO NEW CUSTOMERS</span>' : ''}${o.assumptionDependent ? '<span class="tag manual">depends on your usage split</span>' : ''}${o.elecPlan?.prepay ? '<span class="tag">prepay</span>' : ''}</div>
+          <div>${ut === 'low' ? '<span class="tag">LOW USER</span>' : ut === 'standard' ? '<span class="tag">STANDARD USER</span>' : o.elecPlan?.userTypeNote ? `<span class="tag" title="${esc(o.elecPlan.userTypeNote)}">USER TYPE NOT CONFIRMED (low or standard)</span>` : ''}${o.isBaseline ? '<span class="tag bill">current</span>' : ''}${o.bundle ? '<span class="tag">dual fuel</span>' : ''}${o.closed ? '<span class="tag stale">CLOSED TO NEW CUSTOMERS</span>' : ''}${o.splitFromHourly ? '<span class="tag bill">split from your hourly data</span>' : o.assumptionDependent ? '<span class="tag manual">depends on your usage split</span>' : ''}${o.elecPlan?.prepay ? '<span class="tag">prepay</span>' : ''}</div>
         </div>
         <div class="cost"><span class="big">${money0(o.annual)}</span><span class="small muted">/yr · ${money0(o.monthlyAvg)}/mo</span>${vs}</div>
       </div>
@@ -293,8 +307,8 @@ function renderResults() {
 function quoteTodo() {
   // Retailers that are open to new customers but need a manual quote (whole retailer, or some fuels/plans).
   return (DATA.providers || []).filter((p) => p.status !== 'closed' && !p.closedToNewCustomers && p.openToNewCustomers !== false && !p.notComparable)
-    .filter((p) => !(p.planCount > 0) || p.manualQuote)
-    .map((p) => ({ ...p, quoteUrl: p.manualQuote?.url || p.url, partial: p.planCount > 0 }));
+    .filter((p) => !(p.planCount > 0) || p.manualQuote || (p.manualSnapshot && isStale(p.snapshotRetrievedAt)))
+    .map((p) => ({ ...p, quoteUrl: p.manualQuote?.url || p.refreshUrl || p.url, partial: p.planCount > 0 }));
 }
 function renderUnavailable() {
   const statusText = { not_available_automatically: 'Needs manual quote', needs_review: 'Needs review', automatic: 'Partly priced' };
@@ -356,7 +370,7 @@ function renderMonthChart(sel, base) {
 function renderScenarioCompare() {
   const scen = [{ ...billsScenario() }, ...Object.values(load(LS.scenarios, {}))];
   const rows = scen.map((s) => {
-    const o = rankOffers(allPlans(), s, s.prefs || state.prefs, baseline());
+    const o = rankOffers(allPlans(), costScenario(s), s.prefs || state.prefs, baseline());
     const best = o.find((x) => !x.incomplete && !x.ineligible && !x.closed), base = o.find((x) => x.isBaseline), a = annualKwh(s);
     return `<tr><td><strong>${esc(s.name)}</strong>${s.name === (state.name || MY_BILLS) ? ' <span class="tag">showing</span>' : ''}</td><td class="num">${Math.round(a.elec).toLocaleString()}</td><td class="num">${Math.round(a.gas).toLocaleString()}</td>
       <td class="num">${base ? money0(base.annual) : '—'}</td><td>${best ? esc(best.label) : '—'}</td><td class="num">${best ? money0(best.annual) : '—'}</td>
@@ -515,7 +529,7 @@ function renderLowStd() {
     : '';
   const a = annualKwh(state).elec;
   const parts = [];
-  const scen = { ...state, gasKwh: 0, months: state.months.map((m) => ({ ...m, gasKwh: 0 })) };
+  const scen = costScenario({ ...state, gasKwh: 0, months: state.months.map((m) => ({ ...m, gasKwh: 0 })) });
   // Real fetched data: Vector's own low vs standard lines charges.
   const ne = DATA.networkCharges?.electricity;
   const vl = ne?.rows.find((r) => r.code === 'ARNLU'), vs = ne?.rows.find((r) => r.code === 'ARNSU');
@@ -575,19 +589,23 @@ function showBillsMsg(items) {
 }
 
 const startsWithPdf = (buf) => /%PDF-/.test(new TextDecoder('latin1').decode(new Uint8Array(buf.slice(0, 1024))));
+const isCsv = (f, buf) => !startsWithPdf(buf) && (/\.csv$/i.test(f.name || '') || /^text\/csv/i.test(f.type || '') || looksLikeHourlyCsv(new TextDecoder().decode(new Uint8Array(buf.slice(0, 200)))));
 const looksJson = (f, buf) => /\.json$/i.test(f.name) || /json/i.test(f.type) || /^\s*[{[]/.test(new TextDecoder().decode(new Uint8Array(buf.slice(0, 64))));
 
 /** Read the chosen / dropped files: Genesis PDF bills (parsed here, in the browser) and/or a my-usage.json file. */
 async function importBillFiles(files) {
   files = [...files];
   if (!files.length) return;
-  const msgs = [], parsed = [];
-  let json = null;
+  const msgs = [], parsed = [], csvRows = [];
+  let json = null, csvFiles = 0;
   showBillsMsg([{ text: `Reading ${files.length} file(s) in this browser…` }]);
   for (const f of files) {
     let buf;
     try { buf = await f.arrayBuffer(); } catch { msgs.push({ bad: true, text: `${f.name}: the file could not be opened.` }); continue; }
-    if (startsWithPdf(buf)) {
+    if (isCsv(f, buf)) {
+      try { csvRows.push(...parseHourlyCsv(new TextDecoder().decode(buf)).rows); csvFiles++; }
+      catch (e) { msgs.push({ bad: true, text: `${f.name}: ${e instanceof HourlyError ? e.message : 'this CSV could not be read as Genesis hourly usage.'}` }); }
+    } else if (startsWithPdf(buf)) {
       try {
         const { pdfPages } = await import('./pdf-text.js');
         parsed.push({ name: f.name, inv: parseGenesisInvoice(await pdfPages(buf)) });
@@ -601,9 +619,10 @@ async function importBillFiles(files) {
       if (errs.length) { msgs.push({ bad: true, text: `${f.name}: this JSON file is not a my-usage.json bills file (${errs.slice(0, 3).join('; ')}).` }); continue; }
       json = { name: f.name, obj };
     } else {
-      msgs.push({ bad: true, text: `${f.name}: not a PDF or JSON file. Choose your Genesis Energy PDF bills or a my-usage.json file.` });
+      msgs.push({ bad: true, text: `${f.name}: not a PDF, CSV or JSON file. Choose your Genesis Energy PDF bills, Genesis hourly usage CSVs or a my-usage.json file.` });
     }
   }
+  if (csvRows.length) msgs.unshift(useHourly(csvRows, csvFiles));
   try {
     if (parsed.length) {
       const prev = USAGE_FROM === 'browser' && USAGE?.pdfImport ? USAGE.pdfImport : null;
@@ -709,7 +728,42 @@ function applyBillEdits() {
   rebuildFromInvoices(invoices, overrides, '✔ Your changes were applied and saved in this browser.');
 }
 
+/** Merge hourly rows into this browser's store (de-duplicated by timestamp) and return a message. */
+function useHourly(rows, files) {
+  const before = new Set(HOURLY.map((r) => r.key));
+  const added = new Set(rows.map((r) => r.key).filter((k) => !before.has(k))).size;
+  HOURLY = mergeHourly(HOURLY, rows);
+  save(LS.hourly, HOURLY);
+  const c = hourlyCoverage(HOURLY);
+  const dup = rows.length - added;
+  changed(true);
+  return { text: `✔ Read ${files} Genesis hourly usage CSV(s): ${added} new hour(s)${dup ? `, ${dup} already loaded (same timestamp, replaced)` : ''}. Hourly data now covers ${c.text}, ${c.hours} hours, ${c.kwh.toLocaleString('en-NZ')} kWh${c.incompleteDays.length ? `; incomplete days: ${c.incompleteDays.join(', ')}` : ''}. The dollars column is ignored. Saved in this browser only.` };
+}
+
+function renderHourlyInfo() {
+  const el = $('hourlyInfo'); if (!el) return;
+  const c = hourlyCoverage(HOURLY), sc = seasonCoverage(HOURLY);
+  $('useHourlyRow').hidden = !c;
+  const wbox = $('winterWeights');
+  wbox.hidden = !(c && sc.winter && sc.spring && state.useHourly !== false);
+  if (!c) { el.innerHTML = 'Load your Genesis hourly usage CSVs (with <em>Load my bills</em>) to compute each time-of-use plan\'s split from your own hourly use.'; wbox.innerHTML = ''; return; }
+  $('useHourly').checked = state.useHourly !== false;
+  const seasons = [sc.winter && `winter shape from ${esc(sc.winter.text)}`, sc.spring && `spring shape from ${esc(sc.spring.text)}`].filter(Boolean).join('; ');
+  el.innerHTML = `<strong>Hourly data loaded:</strong> ${c.days} days, ${c.hours} hours${c.dstDays.length ? ` (incl. daylight-saving day(s) ${c.dstDays.map(esc).join(', ')})` : ''}${c.incompleteDays.length ? `; incomplete days: ${c.incompleteDays.map(esc).join(', ')}` : ''}: ${seasons}.
+    ${state.useHourly !== false ? 'Time-of-use plans with stated hours use splits from your hourly data for their own bands, applied to each month\'s kWh from your bills; the shares above apply to other plans (e.g. Powershop, whose peak hours are not stated).' : 'Not used: the shares above apply to every plan.'}
+    ${!sc.winter ? '⚠ Your hourly data covers only spring, so winter heating may shift the split.' : !sc.spring ? '⚠ Your hourly data covers only winter; summer use may differ.' : 'Dec–Feb use the spring shape (no summer data).'}`;
+  if (!wbox.hidden) {
+    const w = winterWeights(state);
+    wbox.innerHTML = `<legend class="small">Winter shape used per month (%; the rest uses the spring shape)</legend>${MON.map((m, i) => `<label class="small">${m}<input type="number" min="0" max="100" step="1" data-w="${i}" value="${Math.round(w[i] * 100)}"/></label>`).join('')} <button type="button" class="ghost small" id="resetWeights">Reset</button>`;
+    wbox.querySelectorAll('input').forEach((inp) => inp.addEventListener('change', () => {
+      const ww = [...winterWeights(state)]; ww[+inp.dataset.w] = Math.max(0, Math.min(100, Number(inp.value) || 0)) / 100; state.winterWeights = ww; changed();
+    }));
+    $('resetWeights').addEventListener('click', () => { delete state.winterWeights; changed(true); });
+  }
+}
+
 function bindBills() {
+  $('useHourly').addEventListener('change', (e) => { state.useHourly = e.target.checked; changed(true); });
   $('loadBills').addEventListener('change', async (e) => { await importBillFiles(e.target.files); e.target.value = ''; });
   const drop = $('billsDrop');
   const hasFiles = (e) => [...(e.dataTransfer?.types || [])].includes('Files');
@@ -723,9 +777,9 @@ function bindBills() {
     try { useBills(obj); $('pasteBills').value = ''; } catch (err) { showBillsMsg([{ bad: true, text: err instanceof InvoiceError ? err.message : 'The pasted JSON could not be used.' }]); }
   });
   $('forgetBills').addEventListener('click', () => {
-    if (!confirm('Remove your bills data (usage and current plan) from this browser? Saved scenarios and quotes are kept.')) return;
-    localStorage.removeItem(LS.usage); localStorage.removeItem(LS.state);
-    USAGE = null; USAGE_FROM = null; state = billsScenario();
+    if (!confirm('Remove your bills data (usage, hourly usage and current plan) from this browser? Saved scenarios and quotes are kept.')) return;
+    localStorage.removeItem(LS.usage); localStorage.removeItem(LS.state); localStorage.removeItem(LS.hourly);
+    USAGE = null; USAGE_FROM = null; HOURLY = []; state = billsScenario();
     showBillsMsg([{ text: 'Removed your bills from this browser.' }]);
     changed(true); renderBanner(); renderSources(); renderBillsSummary();
   });

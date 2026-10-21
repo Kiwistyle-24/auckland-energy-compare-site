@@ -97,3 +97,6 @@ details.charts { margin-top:1rem; } details > summary { cursor:pointer; font-wei
 #billsSummary table input[type=number] { width:6.5rem; }
 #billsSummary .plan-edit { display:flex; flex-wrap:wrap; gap:.6rem 1rem; margin:.5rem 0; }
 #billsSummary .plan-edit label { display:flex; flex-direction:column; font-size:.85rem; }
+.weights { display:flex; flex-wrap:wrap; gap:.3rem .5rem; align-items:end; margin-top:.4rem; }
+.weights label { display:flex; flex-direction:column; width:3.6rem; }
+.weights input { width:100%; }

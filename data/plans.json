@@ -10,7 +10,8 @@
     "Retailers closed to new customers are listed (with the reason) but their plans are never ranked.",
     "Vector network (lines) charges are included as context only: they are part of every retail price, not a plan you can buy.",
     "Low-user (low fixed charge) plans are being phased out: see lowFixedCharge for the rule and its source.",
-    "Quote snapshots (live quote disabled; shown as \"quote snapshot\" and flagged stale after 35 days; get a manual quote): Genesis Energy (12 plans, retrieved 21 Oct 2026), Contact Energy (4 plans, retrieved 21 Oct 2026), Mercury (9 plans, retrieved 21 Oct 2026), Powershop (2 plans, retrieved 21 Oct 2026)."
+    "Quote snapshots (live quote disabled; shown as \"quote snapshot\" and flagged stale after 35 days; get a manual quote): Genesis Energy (12 plans, retrieved 21 Oct 2026), Contact Energy (4 plans, retrieved 21 Oct 2026), Mercury (9 plans, retrieved 21 Oct 2026), Powershop (2 plans, retrieved 21 Oct 2026).",
+    "Quote snapshots retrieved by hand in a browser at the property (never fetched by this app; shown as \"quote snapshot\", flagged stale after 35 days): Electric Kiwi (3 plans, retrieved 21 Oct 2026)."
   ],
   "networkCharges": {
     "electricity": {
@@ -1611,6 +1612,146 @@
       },
       "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
       "snapshot": true
+    },
+    {
+      "id": "electrickiwi-movemaster",
+      "retailerId": "electrickiwi",
+      "provider": "Electric Kiwi",
+      "name": "MoveMaster",
+      "fuel": "electricity",
+      "userType": "any",
+      "variantGroup": "electrickiwi-movemaster",
+      "gstInclusive": true,
+      "publishedGst": "incl",
+      "dailyCents": 160,
+      "rates": {
+        "peak": 59.56,
+        "offpeak": 44.67,
+        "night": 17.86
+      },
+      "timeBands": {
+        "peak": "weekdays 7–9am and 5–9pm",
+        "offpeak": "off-peak shoulder: weekdays 9am–5pm and 9–11pm; weekends 7am–11pm",
+        "night": "off-peak night: every day 11pm–7am"
+      },
+      "region": "Vector network, Auckland",
+      "closedToNewCustomers": false,
+      "fixedTerm": false,
+      "termMonths": null,
+      "exitFee": "None shown in the quote",
+      "discounts": {},
+      "conditions": [
+        "Time-of-use: peak $0.5956/kWh (weekdays 7–9am, 5–9pm); off-peak shoulder $0.4467/kWh (weekdays 9am–5pm and 9–11pm; weekends 7am–11pm); off-peak night $0.1786/kWh (every day 11pm–7am). Costed with your peak / night shares; the rest is costed at the shoulder rate.",
+        "Free \"Hour of Power\" every day: NOT costed here, so the real cost may be a little lower.",
+        "User type not confirmed: the quote had a Standard/Low user toggle but showed the same rates for both, so this plan is treated as available to both low and standard users.",
+        "No contract term or exit fees were shown in the quote.",
+        "Electric Kiwi quote prices include GST.",
+        "Quote snapshot: retrieved by hand in a browser at the property's address on 21 Oct 2026 (Electric Kiwi's join app is never fetched automatically). Confirm current rates with Electric Kiwi before switching."
+      ],
+      "effectiveFrom": null,
+      "effectiveNote": "No \"effective from\" date given by the retailer's quote; rates are those quoted on the retrieval date.",
+      "source": {
+        "method": "snapshot",
+        "url": "https://join.electrickiwi.co.nz/",
+        "retrievedAt": "2026-10-21T03:19:00.000Z",
+        "label": "Electric Kiwi: quote snapshot (retrieved by hand in a browser at the property)"
+      },
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property, retrieved by hand in a browser.",
+      "userTypeNote": "not confirmed (shown the same for low and standard)",
+      "snapshot": true
+    },
+    {
+      "id": "electrickiwi-everyday",
+      "retailerId": "electrickiwi",
+      "provider": "Electric Kiwi",
+      "name": "Everyday",
+      "fuel": "electricity",
+      "userType": "any",
+      "variantGroup": "electrickiwi-everyday",
+      "gstInclusive": true,
+      "publishedGst": "incl",
+      "dailyCents": 207,
+      "rates": {
+        "anytime": 45.97
+      },
+      "region": "Vector network, Auckland",
+      "closedToNewCustomers": false,
+      "fixedTerm": false,
+      "termMonths": null,
+      "exitFee": "None shown in the quote",
+      "discounts": {},
+      "conditions": [
+        "One rate at all times ($0.4597/kWh).",
+        "No disconnection fees.",
+        "User type not confirmed: the quote had a Standard/Low user toggle but showed the same rates for both, so this plan is treated as available to both low and standard users.",
+        "No contract term or exit fees were shown in the quote.",
+        "Electric Kiwi quote prices include GST.",
+        "Quote snapshot: retrieved by hand in a browser at the property's address on 21 Oct 2026 (Electric Kiwi's join app is never fetched automatically). Confirm current rates with Electric Kiwi before switching."
+      ],
+      "effectiveFrom": null,
+      "effectiveNote": "No \"effective from\" date given by the retailer's quote; rates are those quoted on the retrieval date.",
+      "source": {
+        "method": "snapshot",
+        "url": "https://join.electrickiwi.co.nz/",
+        "retrievedAt": "2026-10-21T03:19:00.000Z",
+        "label": "Electric Kiwi: quote snapshot (retrieved by hand in a browser at the property)"
+      },
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property, retrieved by hand in a browser.",
+      "userTypeNote": "not confirmed (shown the same for low and standard)",
+      "snapshot": true
+    },
+    {
+      "id": "electrickiwi-sundaysaver",
+      "retailerId": "electrickiwi",
+      "provider": "Electric Kiwi",
+      "name": "Sunday Saver",
+      "fuel": "electricity",
+      "userType": "any",
+      "variantGroup": "electrickiwi-sundaysaver",
+      "gstInclusive": true,
+      "publishedGst": "incl",
+      "dailyCents": 207,
+      "rates": {
+        "peak": 41.02,
+        "offpeak": 36.91
+      },
+      "freeHours": true,
+      "freeHoursNote": "Free Sundays: the \"free hours\" share is the part of your power use on Sundays (default 1/7, about 14%; edit \"When you use power\").",
+      "timeBands": {
+        "peak": "weekdays 7–9am and 5–9pm",
+        "offpeak": "Saturdays all day; weekdays 9am–5pm and 9pm–7am",
+        "free": "Sundays (first year, with the $250 prepayment)"
+      },
+      "region": "Vector network, Auckland",
+      "closedToNewCustomers": false,
+      "fixedTerm": false,
+      "termMonths": null,
+      "exitFee": "None shown in the quote",
+      "discounts": {},
+      "requires": [
+        "broadband"
+      ],
+      "conditions": [
+        "BUNDLE REQUIRED: needs Electric Kiwi broadband or mobile as well (that cost is NOT included here).",
+        "Free Sundays in the first year require paying $250 in advance; the $250 prepayment is not costed here (check with Electric Kiwi how it is applied to your bills).",
+        "Peak $0.4102/kWh (weekdays 7–9am, 5–9pm); off-peak $0.3691/kWh (Saturdays all day; weekdays 9am–5pm and 9pm–7am); Sundays free (first year).",
+        "Free \"Hour of Power\" every day: NOT costed here, so the real cost may be a little lower.",
+        "User type not confirmed: the quote had a Standard/Low user toggle but showed the same rates for both, so this plan is treated as available to both low and standard users.",
+        "No contract term or exit fees were shown in the quote.",
+        "Electric Kiwi quote prices include GST.",
+        "Quote snapshot: retrieved by hand in a browser at the property's address on 21 Oct 2026 (Electric Kiwi's join app is never fetched automatically). Confirm current rates with Electric Kiwi before switching."
+      ],
+      "effectiveFrom": null,
+      "effectiveNote": "No \"effective from\" date given by the retailer's quote; rates are those quoted on the retrieval date.",
+      "source": {
+        "method": "snapshot",
+        "url": "https://join.electrickiwi.co.nz/",
+        "retrievedAt": "2026-10-21T03:19:00.000Z",
+        "label": "Electric Kiwi: quote snapshot (retrieved by hand in a browser at the property)"
+      },
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property, retrieved by hand in a browser.",
+      "userTypeNote": "not confirmed (shown the same for low and standard)",
+      "snapshot": true
     }
   ],
   "providers": [
@@ -1772,14 +1913,14 @@
         "electrickiwi.co.nz"
       ],
       "status": "not_available_automatically",
-      "reason": "Electric Kiwi shows prices only after an address lookup in its join app (join.electrickiwi.co.nz), whose robots.txt disallows everything except the home page (\"Allow: /$, Disallow: /*\"), so the lookup is not run automatically.",
-      "evidence": "y Login Prices Join Enter your address to see your prices Go Kiwi Mobile Flexible plans designed to save you moolah . Everything you need, without the fluff. That's be",
-      "manualQuote": {
-        "url": "https://join.electrickiwi.co.nz/"
-      },
-      "planCount": 0,
-      "checkedAt": "2026-10-21T02:21:24.299Z",
-      "httpStatus": 200
+      "reason": "Quote snapshot: the 3 plans (MoveMaster, Everyday, Sunday Saver) were retrieved by hand in a browser at the property's address on 21 Oct 2026 from Electric Kiwi's join app (join.electrickiwi.co.nz), whose robots.txt disallows automated access, so this app never fetches it. Prices incl. GST. Low/standard user type not confirmed (the quote showed the same rates for both). Flagged stale after 35 days; then get a new quote there and add it under \"Add a quote\". No gas from Electric Kiwi.",
+      "snapshot": true,
+      "snapshotRetrievedAt": "2026-10-21T03:19:00.000Z",
+      "manualSnapshot": true,
+      "refreshUrl": "https://join.electrickiwi.co.nz/",
+      "planCount": 3,
+      "checkedAt": "2026-10-21T03:19:00.000Z",
+      "httpStatus": null
     },
     {
       "id": "nova",
@@ -2427,6 +2568,14 @@
       "url": "https://www.legislation.govt.nz/regulation/public/2021/0391/latest/LMS600865.html",
       "label": "Low fixed charge rules (checked by hand)",
       "retrievedAt": "2026-10-21T00:40:00+13:00",
+      "status": "manual",
+      "httpStatus": null
+    },
+    {
+      "url": "https://join.electrickiwi.co.nz/",
+      "label": "Electric Kiwi: join app quote at the property, retrieved by hand in a browser (quote snapshot; session URL not stored)",
+      "method": "GET",
+      "retrievedAt": "2026-10-21T03:19:00.000Z",
       "status": "manual",
       "httpStatus": null
     }

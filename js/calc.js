@@ -130,10 +130,14 @@ function bundleTerms(elecPlan, gasPlan) {
  */
 export function costOffer({ elecPlan, gasPlan }, scenario, opts = {}) {
   const shares = scenario.shares || {};
+  // scenario.planShares: { planId: { shares, monthShares?, label } } from hourly data; replaces the general split for that plan
+  // (monthShares[i] for calendar month i+1 when present, e.g. season-aware splits).
+  const hourly = elecPlan ? scenario.planShares?.[elecPlan.id] : null;
+  const eShares = hourly ? { ...shares, ...hourly.shares } : shares;
   const periods = usagePeriods(scenario);
   const bundle = isBundle(elecPlan, gasPlan) ? bundleTerms(elecPlan, gasPlan) : null;
   const months = periods.map((p) => {
-    const e = elecPlan && p.elecKwh >= 0 ? periodCost(elecPlan, { kwh: p.elecKwh, days: p.days, month: p.month }, shares, opts) : null;
+    const e = elecPlan && p.elecKwh >= 0 ? periodCost(elecPlan, { kwh: p.elecKwh, days: p.days, month: p.month }, hourly?.monthShares?.[p.month - 1] ? { ...shares, ...hourly.monthShares[p.month - 1] } : eShares, opts) : null;
     const g = gasPlan && p.gasKwh > 0 ? periodCost(gasPlan, { kwh: p.gasKwh, days: p.days, month: p.month }, shares, opts) : null;
     let elec = e ? e.total : 0;
     let gas = g ? g.total : 0;
@@ -155,14 +159,15 @@ export function costOffer({ elecPlan, gasPlan }, scenario, opts = {}) {
     assumptions.push('Low-user plan: eligible only under 8,000 kWh/yr at your main home; the low-user rules end 1 April 2027.');
   }
   if (elecPlan?.userType === 'standard' && kwh.elec <= LOW_USER_THRESHOLD_KWH) warnings.push('You may qualify for a low-user version of this plan.');
-  if (elecPlan && !planHasOnlyAnytime(elecPlan)) assumptions.push(touAssumption(elecPlan, shares, !!scenario.sharesFromBills));
+  if (elecPlan && !planHasOnlyAnytime(elecPlan)) assumptions.push(hourly ? hourly.label : touAssumption(elecPlan, shares, !!scenario.sharesFromBills));
+  if (elecPlan && !hourly && !planHasOnlyAnytime(elecPlan) && scenario.planShares && Object.keys(scenario.planShares).length) assumptions.push('Not split from your hourly data: this plan\'s time bands could not be matched to stated hours (e.g. peak hours not stated in the quote), so the general shares are used.');
   if (elecPlan?.monthlyRates) assumptions.push('Seasonal prices: each month is costed at that month\'s rate from the retailer\'s quote.');
   if (elecPlan?.timeBands) assumptions.push(`Time bands (as quoted): ${Object.entries(elecPlan.timeBands).filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join('; ')}.`);
   for (const p of [elecPlan, gasPlan]) if (p?.discounts?.oneOffCreditDollars && opts.oneOffCredits !== false) assumptions.push(`Includes a one-off $${p.discounts.oneOffCreditDollars} ${p.provider} sign-up credit, spread over the first year (later years cost that much more).`);
   if (bundle) assumptions.push(`Dual-fuel discount applied (${[elecPlan, gasPlan].map((p) => p?.discounts?.bundle?.condition).filter(Boolean)[0] || 'same retailer for both fuels'}).`);
-  if (elecPlan?.freeHours) assumptions.push(`Free-hours plan: assumes ${pct(shares.free)} of your power use falls in the free hours (edit "When you use power"). The result depends heavily on this.`);
+  if (elecPlan?.freeHours && !hourly) assumptions.push(`Free-hours plan: assumes ${pct(shares.free)} of your power use falls in the free hours (edit "When you use power"). The result depends heavily on this.`);
   if (scenario.gasKwh > 0 && scenario.mode !== 'seasonal' && !gasPlan) warnings.push('No gas plan included.');
-  return { months, annual, monthlyAvg: round2(annual / 12), warnings, assumptions, ineligible, assumptionDependent: !!(elecPlan && !planHasOnlyAnytime(elecPlan)), bundle: !!bundle };
+  return { months, annual, monthlyAvg: round2(annual / 12), warnings, assumptions, ineligible, assumptionDependent: !!(elecPlan && !planHasOnlyAnytime(elecPlan)), splitFromHourly: !!hourly, bundle: !!bundle };
 }
 
 const pct = (x) => `${Math.round((Number(x) || 0) * 100)}%`;
