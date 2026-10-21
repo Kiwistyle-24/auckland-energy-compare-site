@@ -9,7 +9,8 @@
     "Most Auckland retailers show prices only after an address / ICP lookup. Where the retailer's own public quote page allows it, that lookup is run for one Vector-network Auckland property (rates stored as \"Vector network, Auckland\"; the address itself is never stored here). Retailers whose lookup needs a login, personal details, or is blocked by robots.txt are listed as \"needs manual quote\" with the reason and their quote page.",
     "Retailers closed to new customers are listed (with the reason) but their plans are never ranked.",
     "Vector network (lines) charges are included as context only: they are part of every retail price, not a plan you can buy.",
-    "Low-user (low fixed charge) plans are being phased out: see lowFixedCharge for the rule and its source."
+    "Low-user (low fixed charge) plans are being phased out: see lowFixedCharge for the rule and its source.",
+    "Contact Energy: live quote disabled (its quote API needs an API key copied from its join-page script, not an allowed method). Its plans are a dated quote snapshot from 21 Oct 2026, flagged stale after 35 days."
   ],
   "networkCharges": {
     "electricity": {
@@ -659,19 +660,20 @@
         "Rate type: All Day Economy (Low User).",
         "Includes the Electricity Authority levy of 0.23c/kWh incl. GST (from 2026-10-01), which Contact lists as a separate line.",
         "No prompt-payment discount in the quote.",
-        "Prices returned incl. GST by Contact's online quote (ChargeGst).",
-        "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans."
+        "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans.",
+        "Prices were returned incl. GST by Contact's online quote on the retrieval date.",
+        "Quote snapshot: Contact's live quote is no longer fetched automatically. Confirm current rates with Contact before switching."
       ],
       "effectiveFrom": "2026-09-01",
       "effectiveNote": "Effective from 2026-09-01 (as stated by the retailer).",
       "source": {
-        "method": "automatic",
+        "method": "snapshot",
         "url": "https://journey.contact.co.nz/residential/find-a-plan",
         "retrievedAt": "2026-10-21T02:19:50.559Z",
-        "label": "Contact Energy: online plan quote for the property (journey.contact.co.nz)",
-        "endpoint": "https://api.contact-digital-prod.net/price/v2"
+        "label": "Contact Energy: quote snapshot (live quote lookup disabled)"
       },
-      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up)."
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
+      "snapshot": true
     },
     {
       "id": "contact-basic-standard",
@@ -697,18 +699,19 @@
         "Rate type: All Day Economy.",
         "Includes the Electricity Authority levy of 0.23c/kWh incl. GST (from 2026-10-01), which Contact lists as a separate line.",
         "No prompt-payment discount in the quote.",
-        "Prices returned incl. GST by Contact's online quote (ChargeGst)."
+        "Prices were returned incl. GST by Contact's online quote on the retrieval date.",
+        "Quote snapshot: Contact's live quote is no longer fetched automatically. Confirm current rates with Contact before switching."
       ],
       "effectiveFrom": "2026-09-01",
       "effectiveNote": "Effective from 2026-09-01 (as stated by the retailer).",
       "source": {
-        "method": "automatic",
+        "method": "snapshot",
         "url": "https://journey.contact.co.nz/residential/find-a-plan",
         "retrievedAt": "2026-10-21T02:19:50.559Z",
-        "label": "Contact Energy: online plan quote for the property (journey.contact.co.nz)",
-        "endpoint": "https://api.contact-digital-prod.net/price/v2"
+        "label": "Contact Energy: quote snapshot (live quote lookup disabled)"
       },
-      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up)."
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
+      "snapshot": true
     },
     {
       "id": "contact-bb-bundle-low",
@@ -738,19 +741,20 @@
         "Requires taking Contact broadband as well (broadband cost NOT included here).",
         "Includes the Electricity Authority levy of 0.23c/kWh incl. GST (from 2026-10-01), which Contact lists as a separate line.",
         "No prompt-payment discount in the quote.",
-        "Prices returned incl. GST by Contact's online quote (ChargeGst).",
-        "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans."
+        "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans.",
+        "Prices were returned incl. GST by Contact's online quote on the retrieval date.",
+        "Quote snapshot: Contact's live quote is no longer fetched automatically. Confirm current rates with Contact before switching."
       ],
       "effectiveFrom": "2026-09-01",
       "effectiveNote": "Effective from 2026-09-01 (as stated by the retailer).",
       "source": {
-        "method": "automatic",
+        "method": "snapshot",
         "url": "https://journey.contact.co.nz/residential/find-a-plan",
         "retrievedAt": "2026-10-21T02:19:50.559Z",
-        "label": "Contact Energy: online plan quote for the property (journey.contact.co.nz)",
-        "endpoint": "https://api.contact-digital-prod.net/price/v2"
+        "label": "Contact Energy: quote snapshot (live quote lookup disabled)"
       },
-      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up)."
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
+      "snapshot": true
     },
     {
       "id": "contact-bb-bundle-standard",
@@ -780,18 +784,19 @@
         "Requires taking Contact broadband as well (broadband cost NOT included here).",
         "Includes the Electricity Authority levy of 0.23c/kWh incl. GST (from 2026-10-01), which Contact lists as a separate line.",
         "No prompt-payment discount in the quote.",
-        "Prices returned incl. GST by Contact's online quote (ChargeGst)."
+        "Prices were returned incl. GST by Contact's online quote on the retrieval date.",
+        "Quote snapshot: Contact's live quote is no longer fetched automatically. Confirm current rates with Contact before switching."
       ],
       "effectiveFrom": "2026-09-01",
       "effectiveNote": "Effective from 2026-09-01 (as stated by the retailer).",
       "source": {
-        "method": "automatic",
+        "method": "snapshot",
         "url": "https://journey.contact.co.nz/residential/find-a-plan",
         "retrievedAt": "2026-10-21T02:19:50.559Z",
-        "label": "Contact Energy: online plan quote for the property (journey.contact.co.nz)",
-        "endpoint": "https://api.contact-digital-prod.net/price/v2"
+        "label": "Contact Energy: quote snapshot (live quote lookup disabled)"
       },
-      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up)."
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
+      "snapshot": true
     },
     {
       "id": "mercury-open-a1-standard",
@@ -1632,24 +1637,26 @@
       ],
       "url": "https://journey.contact.co.nz/residential/find-a-plan",
       "domains": [
-        "contact.co.nz",
-        "contact-digital-prod.net"
+        "contact.co.nz"
       ],
-      "status": "automatic",
-      "reason": "Electricity priced automatically. Needs a manual quote: gas (Contact's online quote returns no gas rates); Good Nights, Good Weekends, Good Charge (no rates returned for this meter set-up).",
+      "status": "not_available_automatically",
+      "reason": "Live quote disabled: Contact's online quote only works with an API key copied from its join-page script, which is not an allowed method, so it is no longer called. The 4 electricity plans shown are a quote snapshot retrieved 21 Oct 2026 (flagged stale after 35 days). Get a current quote (electricity, gas and the Good Nights / Good Weekends / Good Charge plans) on Contact's site and add it under \"Add a quote\".",
       "manualQuote": {
-        "url": "https://contact.co.nz/residential/plans",
+        "url": "https://journey.contact.co.nz/residential/find-a-plan",
         "what": [
+          "current electricity rates",
           "gas",
           "Good Nights",
           "Good Weekends",
           "Good Charge"
         ]
       },
-      "addressQuote": true,
+      "snapshot": true,
+      "snapshotRetrievedAt": "2026-10-21T02:19:50.559Z",
       "planCount": 4,
       "checkedAt": "2026-10-21T02:19:50.559Z",
-      "httpStatus": 200
+      "httpStatus": null,
+      "liveQuoteDisabled": "2026-10-21"
     },
     {
       "id": "mercury",
@@ -2020,7 +2027,7 @@
     },
     {
       "url": "https://journey.contact.co.nz/main.js",
-      "label": "Contact: join page script (public API key)",
+      "label": "Contact: join page script (API key read from it; method now disabled) [21 Oct 2026 snapshot retrieval; live lookup disabled since]",
       "method": "GET",
       "retrievedAt": "2026-10-21T02:19:53.064Z",
       "status": "ok",
@@ -2028,7 +2035,7 @@
     },
     {
       "url": "https://api.contact-digital-prod.net/electricity-registry/icp-lookup",
-      "label": "Contact: ICP lookup",
+      "label": "Contact: ICP lookup [21 Oct 2026 snapshot retrieval; live lookup disabled since]",
       "method": "POST",
       "retrievedAt": "2026-10-21T02:19:55.429Z",
       "status": "ok",
@@ -2036,7 +2043,7 @@
     },
     {
       "url": "https://api.contact-digital-prod.net/plans",
-      "label": "Contact: plan list",
+      "label": "Contact: plan list [21 Oct 2026 snapshot retrieval; live lookup disabled since]",
       "method": "GET",
       "retrievedAt": "2026-10-21T02:19:56.679Z",
       "status": "ok",
@@ -2044,7 +2051,7 @@
     },
     {
       "url": "https://api.contact-digital-prod.net/price/v2",
-      "label": "Contact: Good Weekends low prices",
+      "label": "Contact: Good Weekends low prices [21 Oct 2026 snapshot retrieval; live lookup disabled since]",
       "method": "POST",
       "retrievedAt": "2026-10-21T02:19:58.540Z",
       "status": "ok",
@@ -2052,7 +2059,7 @@
     },
     {
       "url": "https://api.contact-digital-prod.net/price/v2",
-      "label": "Contact: Good Weekends standard prices",
+      "label": "Contact: Good Weekends standard prices [21 Oct 2026 snapshot retrieval; live lookup disabled since]",
       "method": "POST",
       "retrievedAt": "2026-10-21T02:19:59.647Z",
       "status": "ok",
@@ -2060,7 +2067,7 @@
     },
     {
       "url": "https://api.contact-digital-prod.net/price/v2",
-      "label": "Contact: Good Nights low prices",
+      "label": "Contact: Good Nights low prices [21 Oct 2026 snapshot retrieval; live lookup disabled since]",
       "method": "POST",
       "retrievedAt": "2026-10-21T02:20:01.551Z",
       "status": "ok",
@@ -2068,7 +2075,7 @@
     },
     {
       "url": "https://api.contact-digital-prod.net/price/v2",
-      "label": "Contact: Good Nights standard prices",
+      "label": "Contact: Good Nights standard prices [21 Oct 2026 snapshot retrieval; live lookup disabled since]",
       "method": "POST",
       "retrievedAt": "2026-10-21T02:20:02.643Z",
       "status": "ok",
@@ -2076,7 +2083,7 @@
     },
     {
       "url": "https://api.contact-digital-prod.net/price/v2",
-      "label": "Contact: Good Charge low prices",
+      "label": "Contact: Good Charge low prices [21 Oct 2026 snapshot retrieval; live lookup disabled since]",
       "method": "POST",
       "retrievedAt": "2026-10-21T02:20:04.106Z",
       "status": "ok",
@@ -2084,7 +2091,7 @@
     },
     {
       "url": "https://api.contact-digital-prod.net/price/v2",
-      "label": "Contact: Good Charge standard prices",
+      "label": "Contact: Good Charge standard prices [21 Oct 2026 snapshot retrieval; live lookup disabled since]",
       "method": "POST",
       "retrievedAt": "2026-10-21T02:20:06.076Z",
       "status": "ok",
@@ -2092,7 +2099,7 @@
     },
     {
       "url": "https://api.contact-digital-prod.net/price/v2",
-      "label": "Contact: Broadband Bundle low prices",
+      "label": "Contact: Broadband Bundle low prices [21 Oct 2026 snapshot retrieval; live lookup disabled since]",
       "method": "POST",
       "retrievedAt": "2026-10-21T02:20:07.162Z",
       "status": "ok",
@@ -2100,7 +2107,7 @@
     },
     {
       "url": "https://api.contact-digital-prod.net/price/v2",
-      "label": "Contact: Broadband Bundle standard prices",
+      "label": "Contact: Broadband Bundle standard prices [21 Oct 2026 snapshot retrieval; live lookup disabled since]",
       "method": "POST",
       "retrievedAt": "2026-10-21T02:20:08.604Z",
       "status": "ok",
@@ -2108,7 +2115,7 @@
     },
     {
       "url": "https://api.contact-digital-prod.net/price/v2",
-      "label": "Contact: Basic low prices",
+      "label": "Contact: Basic low prices [21 Oct 2026 snapshot retrieval; live lookup disabled since]",
       "method": "POST",
       "retrievedAt": "2026-10-21T02:20:10.502Z",
       "status": "ok",
@@ -2116,7 +2123,7 @@
     },
     {
       "url": "https://api.contact-digital-prod.net/price/v2",
-      "label": "Contact: Basic standard prices",
+      "label": "Contact: Basic standard prices [21 Oct 2026 snapshot retrieval; live lookup disabled since]",
       "method": "POST",
       "retrievedAt": "2026-10-21T02:20:12.075Z",
       "status": "ok",

@@ -31,10 +31,10 @@ export function validatePlan(p, where = 'plan') {
   if (p.requires !== undefined && (!Array.isArray(p.requires) || p.requires.some((r) => !['broadband', 'ev'].includes(r)))) e.push(`${where}.requires must be a list of broadband|ev`);
   if (!p.source || typeof p.source !== 'object') e.push(`${where}.source missing (every price needs a source)`);
   else {
-    if (!['automatic', 'manual', 'bill', 'example'].includes(p.source.method)) e.push(`${where}.source.method must be automatic|manual|bill|example`);
+    if (!['automatic', 'snapshot', 'manual', 'bill', 'example'].includes(p.source.method)) e.push(`${where}.source.method must be automatic|snapshot|manual|bill|example`);
     if (p.source.method !== 'bill' && !isUrl(p.source.url)) e.push(`${where}.source.url must be a URL`);
     if (p.source.url && isComparatorUrl(p.source.url)) e.push(`${where}.source.url is a comparison site; prices must come from the retailer's own website`);
-    if (p.source.method === 'automatic' && !isStr(p.retailerId)) e.push(`${where}.retailerId required for fetched plans`);
+    if (['automatic', 'snapshot'].includes(p.source.method) && !isStr(p.retailerId)) e.push(`${where}.retailerId required for fetched plans`);
     if (!isIso(p.source.retrievedAt)) e.push(`${where}.source.retrievedAt must be an ISO date`);
   }
   if (p.effectiveFrom !== undefined && p.effectiveFrom !== null && !isIso(p.effectiveFrom)) e.push(`${where}.effectiveFrom must be an ISO date`);

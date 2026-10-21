@@ -68,9 +68,10 @@ function renderBanner() {
   const stale = isStale(DATA.generatedAt);
   if (stale) b.className = 'banner warn';
   const fetched = (DATA.plans || []).filter((p) => p.source?.method === 'automatic');
-  const okRetailers = (DATA.providers || []).filter((p) => p.planCount > 0).length;
+  const snaps = (DATA.plans || []).filter((p) => p.source?.method === 'snapshot');
+  const okRetailers = new Set(fetched.map((p) => p.retailerId)).size;
   const quotes = allPlans().filter((p) => p.source?.method === 'manual').length;
-  b.innerHTML = `<strong>Prices last refreshed: ${fmtDateTime(DATA.generatedAt)}</strong>${stale ? ` <span class="tag stale">STALE: over ${STALE_DAYS} days old, run the refresh workflow</span>` : ''} · ${fetched.length} plan(s) fetched from ${okRetailers} retailer website(s) · ${DATA.providers.length} retailers checked${quotes ? ` · ${quotes} quote(s) you entered` : ''}` +
+  b.innerHTML = `<strong>Prices last refreshed: ${fmtDateTime(DATA.generatedAt)}</strong>${stale ? ` <span class="tag stale">STALE: over ${STALE_DAYS} days old, run the refresh workflow</span>` : ''} · ${fetched.length} plan(s) fetched from ${okRetailers} retailer website(s) · ${DATA.providers.length} retailers checked${snaps.length ? ` · ${snaps.length} plan(s) from dated quote snapshots` : ''}${quotes ? ` · ${quotes} quote(s) you entered` : ''}` +
     (errs ? ` · ⚠ ${errs} source(s) failed on the last run; older values kept` : '') +
     (USAGE?.isPlaceholder ? ' · ⚠ my-usage.json holds PLACEHOLDER values' : '');
 }
@@ -176,7 +177,7 @@ function renderInputSummary() {
 function sourceCell(p) {
   if (!p) return '';
   const tag = p.isExample ? '<span class="tag example">EXAMPLE DATA</span>' : p.source?.method === 'bill' ? '<span class="tag bill">your bill</span>'
-    : p.source?.method === 'automatic' ? '<span class="tag auto">fetched</span>' : '<span class="tag manual">your quote</span>';
+    : p.source?.method === 'automatic' ? '<span class="tag auto">fetched</span>' : p.source?.method === 'snapshot' ? '<span class="tag manual">quote snapshot</span>' : '<span class="tag manual">your quote</span>';
   const link = p.source?.url ? `<a href="${esc(p.source.url)}" target="_blank" rel="noopener" title="${esc(p.source.url)}">${esc(shortUrl(p.source.url))}</a>` : esc(p.source?.note || 'from your bills (no URL)');
   return `${tag} ${link}<br>retrieved ${fmtDateTime(p.source?.retrievedAt)}${staleTag(p.source?.retrievedAt)}${p.effectiveFrom ? `<br>effective from ${fmtDate(p.effectiveFrom)}` : ''}`;
 }
@@ -192,14 +193,14 @@ function effectiveCell(p) {
   if (!p) return '';
   if (p.effectiveFrom) return `effective from ${fmtDate(p.effectiveFrom)}`;
   if (p.pricesUpdated) return `effective from: not shown (page says prices last updated ${fmtDate(p.pricesUpdated)})`;
-  if (p.source?.method === 'automatic') return 'effective from: not shown on the page';
+  if (p.source?.method === 'automatic' || p.source?.method === 'snapshot') return 'effective from: not shown on the page';
   return '';
 }
 function offerSource(p) {
   if (!p) return '';
-  const tag = p.source?.method === 'bill' ? '<span class="tag bill">your bill</span>' : p.source?.method === 'automatic' ? '<span class="tag auto">retailer website</span>' : '<span class="tag manual">your quote</span>';
+  const tag = p.source?.method === 'bill' ? '<span class="tag bill">your bill</span>' : p.source?.method === 'automatic' ? '<span class="tag auto">retailer website</span>' : p.source?.method === 'snapshot' ? '<span class="tag manual">quote snapshot</span>' : '<span class="tag manual">your quote</span>';
   const link = p.source?.url ? `<a href="${esc(p.source.url)}" target="_blank" rel="noopener">${esc(shortUrl(p.source.url))}</a>` : esc(p.source?.note || 'from your bills (no URL)');
-  return `<div class="src">${tag} ${link}<br>prices retrieved ${fmtDateTime(p.source?.retrievedAt)}${staleTag(p.source?.retrievedAt)}${p.stale ? ' <span class="tag stale">last fetch failed: older prices</span>' : ''}${effectiveCell(p) ? `<br>${esc(effectiveCell(p))}` : ''}</div>`;
+  return `<div class="src">${tag} ${link}<br>${p.source?.method === 'snapshot' ? `quote snapshot, retrieved ${fmtDate(p.source?.retrievedAt)} (no longer fetched automatically)` : `prices retrieved ${fmtDateTime(p.source?.retrievedAt)}`}${staleTag(p.source?.retrievedAt)}${p.stale ? ' <span class="tag stale">last fetch failed: older prices</span>' : ''}${effectiveCell(p) ? `<br>${esc(effectiveCell(p))}` : ''}</div>`;
 }
 function conditionsList(o) {
   const items = [];
@@ -295,7 +296,7 @@ function quoteTodo() {
 function renderUnavailable() {
   const statusText = { not_available_automatically: 'Needs manual quote', needs_review: 'Needs review', automatic: 'Partly priced' };
   const rows = quoteTodo();
-  $('unavailableList').innerHTML = rows.map((p) => `<li><div><strong>${esc(p.name)}</strong> <span class="tag">${esc(p.partial ? `Partly priced (${p.planCount} plans) – rest needs a manual quote` : statusText[p.status] || p.status)}</span> <span class="small muted">${esc((p.fuels || []).join(' + '))}</span></div>
+  $('unavailableList').innerHTML = rows.map((p) => `<li><div><strong>${esc(p.name)}</strong> <span class="tag">${esc(p.snapshot ? `Snapshot only (${p.planCount} plans, retrieved ${new Date(p.snapshotRetrievedAt).toLocaleDateString('en-NZ', { timeZone: 'Pacific/Auckland' })}) – needs a manual quote` : p.partial ? `Partly priced (${p.planCount} plans) – rest needs a manual quote` : statusText[p.status] || p.status)}</span> <span class="small muted">${esc((p.fuels || []).join(' + '))}</span></div>
     <div class="small">${esc(p.reason || '')}</div>
     <div class="small"><a href="${esc(p.quoteUrl)}" target="_blank" rel="noopener">${esc(p.name)} quote page ↗</a>${p.quoteUrl !== p.url ? ` · <a href="${esc(p.url)}" target="_blank" rel="noopener">pricing page ↗</a>` : ''} <span class="muted">· checked ${fmtDateTime(p.checkedAt)}</span></div></li>`).join('') || '<li class="muted small">None.</li>';
   const closed = (DATA.providers || []).filter((p) => p.status === 'closed' || p.closedToNewCustomers);
