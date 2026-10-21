@@ -3,34 +3,46 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Auckland Energy Compare</title>
+  <title>Am I on the best energy plan? · Auckland Energy Compare</title>
   <meta name="robots" content="noindex,nofollow" />
   <meta name="aec-build" content="public" />
   <link rel="stylesheet" href="css/style.css" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Ctext y=%2214%22 font-size=%2214%22%3E%E2%9A%A1%3C/text%3E%3C/svg%3E" />
 </head>
 <body>
+  <a class="skip" href="#results">Skip to the ranked plans</a>
   <header class="top">
-    <h1>Auckland Energy Compare</h1>
-    <p class="sub">Electricity and gas plans costed against your own usage (Vector network, Auckland). Prices only from retailers' own websites.</p>
+    <p class="brand">Auckland Energy Compare</p>
   </header>
 
-  <div id="banner" class="banner" role="status">Loading data…</div>
-
   <main>
-    <section class="card" id="inputs">
-      <div class="row between">
-        <h2>Your usage</h2>
-        <div class="scenario-bar">
-          <label>Scenario
-            <select id="scenarioSelect"></select>
-          </label>
-          <button id="saveScenario" type="button">Save as…</button>
-          <button id="deleteScenario" type="button" class="ghost">Delete</button>
-          <button id="resetBills" type="button" class="ghost">Reset to my bills</button>
-        </div>
+    <section id="verdict" class="hero" aria-labelledby="verdictHead">
+      <div class="seg" id="segFuels" role="group" aria-label="What to compare">
+        <button type="button" data-v="both">Power + gas</button><button type="button" data-v="electricity">Power only</button><button type="button" data-v="gas" hidden>Gas only</button>
       </div>
-      <p id="usageSource" class="muted small"></p>
+      <h1 id="verdictHead" tabindex="-1">Loading prices…</h1>
+      <div id="verdictBody"></div>
+      <div id="quickUsage" class="quick" hidden>
+        <label>Power per month (kWh) <input id="quickElec" type="number" min="0" step="1" inputmode="numeric" /></label>
+        <label>Gas per month (kWh) <input id="quickGas" type="number" min="0" step="1" inputmode="numeric" /></label>
+        <label for="loadBills" class="button" id="quickLoad">Load my bills</label>
+      </div>
+      <p id="freshness" class="fresh"></p>
+    </section>
+
+    <section id="results" aria-labelledby="rankingHead">
+      <div class="row between">
+        <h2 id="rankingHead">Cheapest plans <span class="muted small" id="resultsFor"></span></h2>
+      </div>
+      <div id="best" hidden></div>
+      <ol id="offerList" class="rows"></ol>
+      <button type="button" id="showAll" class="ghost" hidden>Show all plans</button>
+    </section>
+
+    <details class="panel" id="usagePanel">
+      <summary><h2>My usage and bills</h2><span class="muted small">Load bills (PDF), hourly CSVs or JSON · scenarios · remove data</span></summary>
+      <div class="panel-body" id="inputs">
+        <p id="usageSource" class="muted small"></p>
       <div class="row bills-bar" id="billsDrop">
         <label class="button">Load my bills (Genesis PDFs, hourly CSVs or JSON) <input type="file" id="loadBills" accept=".pdf,.csv,.json,application/pdf,text/csv,application/json" multiple hidden /></label>
         <button type="button" id="pasteBillsBtn" class="ghost">Paste JSON</button>
@@ -49,8 +61,17 @@
         <div id="billsSummaryBody"></div>
       </details>
       <p class="small muted">🔒 Your bills (PDF or JSON) are read and kept <strong>only in this browser</strong> (PDFs are read with this site's own copy of pdf.js; the figures go into localStorage). Nothing is uploaded, and this public site contains no personal data.</p>
-
-      <div class="grid">
+        <p class="small muted">🔒 Your bills and hourly data are read and kept <strong>only in this browser</strong> (PDFs are read with this site's own copy of pdf.js; the figures go into localStorage). Nothing is uploaded, and this public site contains no personal data.</p>
+        <h3>Scenario</h3>
+        <div class="scenario-bar">
+          <label>Scenario
+            <select id="scenarioSelect"></select>
+          </label>
+          <button id="saveScenario" type="button">Save as…</button>
+          <button id="deleteScenario" type="button" class="ghost">Delete</button>
+          <button id="resetBills" type="button" class="ghost">Reset to my bills</button>
+        </div>
+        <div class="grid">
         <fieldset>
           <legend>Usage</legend>
           <label class="inline"><input type="radio" name="mode" value="average" /> Same every month</label>
@@ -64,18 +85,24 @@
           <p class="muted small" id="annualSummary"></p>
           <button type="button" id="scaleSeasonal" class="ghost small">Rescale months to these averages</button>
         </fieldset>
+        </div>
+        <details id="seasonalBox">
+          <summary>Edit month-by-month usage</summary>
+          <div class="table-wrap"><table id="seasonalTable" class="compact"></table></div>
+        </details>
+        <h3>Compare scenarios</h3>
+        <p class="muted small">Every saved scenario, costed with the current plan list and your preferences.</p>
+        <div class="table-wrap"><table id="scenarioTable"></table></div>
+      </div>
+    </details>
 
-        <fieldset>
-          <legend>When you use power <span class="muted small">(time-of-use plans only)</span></legend>
-          <label>Night share (%) <input id="shareNight" type="number" min="0" max="100" step="1" /></label>
-          <label>Peak share (%) <input id="sharePeak" type="number" min="0" max="100" step="1" /></label>
-          <label>In "free hours" windows (%), e.g. free Sundays ≈ 14.3 <input id="shareFree" type="number" min="0" max="100" step="0.1" /></label>
-          <p class="muted small" id="sharesNote"></p>
-          <label id="useHourlyRow" hidden><input type="checkbox" id="useHourly" checked /> Use my hourly data for time-of-use splits</label>
-          <p class="small" id="hourlyInfo"></p>
-          <fieldset id="winterWeights" class="weights" hidden></fieldset>
-        </fieldset>
-
+    <details class="panel" id="prefsPanel">
+      <summary><h2>Preferences and filters</h2><span class="muted small">Contract term, bundles, low/standard user, discounts</span></summary>
+      <div class="panel-body">
+        <div class="seg" id="segUser" role="group" aria-label="User type">
+          <button type="button" data-v="any">Low + standard</button><button type="button" data-v="low">Low</button><button type="button" data-v="standard">Standard</button>
+        </div>
+        <div class="grid">
         <fieldset>
           <legend>Plan preferences</legend>
           <label>Fuel
@@ -108,6 +135,7 @@
           </label>
           <label>Dual fuel
             <select id="prefDual">
+              <option value="keep">Keep my current gas (or the power retailer's own gas)</option>
               <option value="any">Cheapest combination (any providers)</option>
               <option value="only">Same provider for power and gas only</option>
             </select>
@@ -119,62 +147,70 @@
           <label class="inline"><input id="prefEv" type="checkbox" /> an electric vehicle</label>
           <p class="small muted">Retailers closed to new customers are never ranked.</p>
         </fieldset>
-      </div>
-
-      <details id="seasonalBox">
-        <summary>Edit month-by-month usage</summary>
-        <div class="table-wrap"><table id="seasonalTable" class="compact"></table></div>
-      </details>
-    </section>
-
-    <section class="card" id="results">
-      <h2>Results <span class="muted small" id="resultsFor"></span></h2>
-      <div class="filters" role="group" aria-label="Quick filters">
-        <div class="seg" id="segFuels">
-          <button type="button" data-v="both">Both fuels</button><button type="button" data-v="electricity">Electricity</button><button type="button" data-v="gas">Gas</button>
-        </div>
-        <div class="seg" id="segUser">
-          <button type="button" data-v="any">Low + standard</button><button type="button" data-v="low">Low</button><button type="button" data-v="standard">Standard</button>
         </div>
       </div>
-      <div id="baselineCheck"></div>
-      <div id="best" class="best"></div>
-      <ol id="offerList" class="offers"></ol>
-      <h3 id="unavailable-h">Needs a manual quote</h3>
-      <p class="small muted">These retailers are open to new customers, but their quote for an address can't be fetched automatically (the reason is given for each). Open their quote page, then add the rates under <a href="#addplan">Add a quote</a> to rank them here.</p>
-      <ul id="unavailableList" class="unavail"></ul>
-      <p class="small muted" id="excludedNote"></p>
-      <details class="charts">
-        <summary>Charts</summary>
-        <h3>Annual cost</h3>
-        <div id="chart" class="chart"></div>
-        <h3>Month by month <span class="muted small" id="seasonalLabel"></span></h3>
-        <div id="monthChart" class="chart"></div>
-      </details>
-    </section>
+    </details>
 
-    <section class="card" id="lowstd">
-      <h2>Low user vs standard user</h2>
+    <details class="panel" id="howPanel">
+      <summary><h2>How this is calculated</h2><span class="muted small">Assumptions, time-of-use split, season weights, hourly data, sources</span></summary>
+      <div class="panel-body">
+        <p class="small">Each plan is costed month by month on your usage: daily charge × days, plus kWh × the plan's rates (time-of-use plans split by when you use power), plus GST where needed, minus discounts and credits you'd get. Prices come only from retailers' own websites, your bills, or quotes you add. Always confirm with the retailer before switching.</p>
+        <div id="baselineCheck"></div>
+        <div class="grid">
+        <fieldset>
+          <legend>When you use power <span class="muted small">(time-of-use plans only)</span></legend>
+          <label>Night share (%) <input id="shareNight" type="number" min="0" max="100" step="1" /></label>
+          <label>Peak share (%) <input id="sharePeak" type="number" min="0" max="100" step="1" /></label>
+          <label>In "free hours" windows (%), e.g. free Sundays ≈ 14.3 <input id="shareFree" type="number" min="0" max="100" step="0.1" /></label>
+          <p class="muted small" id="sharesNote"></p>
+          <label id="useHourlyRow" hidden><input type="checkbox" id="useHourly" checked /> Use my hourly data for time-of-use splits</label>
+          <p class="small" id="hourlyInfo"></p>
+          <fieldset id="winterWeights" class="weights" hidden></fieldset>
+        </fieldset>
+        </div>
+        <details class="charts">
+          <summary>Charts</summary>
+          <h3>Annual cost</h3>
+          <div id="chart" class="chart"></div>
+          <h3>Month by month <span class="muted small" id="seasonalLabel"></span></h3>
+          <div id="monthChart" class="chart"></div>
+        </details>
+        <details id="lowstd">
+          <summary>Low user vs standard user</summary>
       <p class="small">Low-user plans have a <strong>lower daily charge but a higher price per kWh</strong>. Standard-user plans are the reverse.
         So low-user plans suit homes that use less power, and standard-user plans suit bigger users. The <strong>break-even</strong> is the yearly kWh where both cost the same.
         While the regulations apply, retailers have to price the two so they cost about the same at 8,000 kWh a year (Auckland).</p>
       <div id="lfcNote" class="small"></div>
       <div id="lowStdBody"></div>
-    </section>
+        </details>
+        <details id="sources">
+          <summary>Data sources</summary>
+          <div id="banner" class="banner" role="status">Loading data…</div>
+      <h3>Retailers checked</h3>
+      <div class="table-wrap"><table id="providerTable"></table></div>
+      <h3 id="all-sources">Every source used</h3>
+      <p class="small muted">Each URL the fetcher requested on the last refresh, its status and when it was retrieved (NZ time), plus the quotes you entered. Data more than 35 days old is flagged as stale.</p>
+      <div class="table-wrap"><table id="sourcesTable"></table></div>
+      <details>
+        <summary>Network (lines) charges: context only, not a retail price</summary>
+        <div id="networkInfo"></div>
+      </details>
+        </details>
+        <p class="small muted">These are estimates only. Real bills depend on your exact address, meter type, the retailer's terms, price changes, seasonal usage and when you use power. Retail rates in this app come only from retailers' own websites (fetched automatically, with the URL and time), your own bills, and quotes you entered from a retailer's site.</p>
+      </div>
+    </details>
 
-    <section class="card" id="compare">
-      <h2>Compare scenarios</h2>
-      <p class="muted small">Every saved scenario, costed with the current plan list and your preferences.</p>
-      <div class="table-wrap"><table id="scenarioTable"></table></div>
-    </section>
-
-    <section class="card" id="addplan">
-      <h2>Add a quote</h2>
-      <h3>Retailers waiting for a quote</h3>
-      <div class="table-wrap"><table id="quoteTodo" class="compact"></table></div>
-      <p class="small">Most retailers only show prices after you enter your address. Get the rates for your address from the <strong>retailer's own website</strong>
-        (quote links above and under "Needs a manual quote"), then type them here (c/kWh and c/day; choose incl. or excl. GST). Comparison sites are not accepted as a source.
-        Quotes are saved in this browser. Use <em>Export</em> to save them into <code>data/manual-plans.json</code> in the repo.</p>
+    <details class="panel" id="notPricedPanel">
+      <summary><h2>Retailers not yet priced</h2><span class="muted small" id="notPricedSummary">Quote links and add a quote</span></summary>
+      <div class="panel-body">
+        <p class="small muted" id="unavailable-h">These retailers are open to new customers, but their quote for an address can't be fetched automatically (the reason is given for each). Open their quote page, then add the rates under <a href="#addplan">Add a quote</a> to rank them here.</p>
+        <ul id="unavailableList" class="unavail"></ul>
+        <p class="small muted" id="excludedNote"></p>
+        <section id="addplan" aria-labelledby="addplanHead">
+          <h3 id="addplanHead">Add a quote</h3>
+          <h4>Retailers waiting for a quote</h4>
+          <div class="table-wrap"><table id="quoteTodo" class="compact"></table></div>
+          <p class="small">Get the rates for your address from the <strong>retailer's own website</strong>, then type them here (c/kWh and c/day; choose incl. or excl. GST). Comparison sites are not accepted as a source. Quotes are saved in this browser. Use <em>Export</em> to save them into <code>data/manual-plans.json</code> in the repo.</p>
       <form id="planForm" class="grid">
         <fieldset>
           <legend>Plan</legend>
@@ -244,29 +280,11 @@
         <button type="button" id="exportPlans" class="ghost">Export quotes (JSON)</button>
         <label class="button ghost">Import JSON <input type="file" id="importPlans" accept="application/json" hidden /></label>
       </div>
-    </section>
-
-    <section class="card" id="sources">
-      <h2>Data sources</h2>
-      <h3>Retailers checked</h3>
-      <div class="table-wrap"><table id="providerTable"></table></div>
-      <h3 id="all-sources">Every source used</h3>
-      <p class="small muted">Each URL the fetcher requested on the last refresh, its status and when it was retrieved (NZ time), plus the quotes you entered. Data more than 35 days old is flagged as stale.</p>
-      <div class="table-wrap"><table id="sourcesTable"></table></div>
-      <details>
-        <summary>Network (lines) charges: context only, not a retail price</summary>
-        <div id="networkInfo"></div>
-      </details>
-    </section>
-
-    <section class="card disclaimer">
-      <h2>Disclaimer</h2>
-      <p class="small">These are estimates only. Real bills depend on your exact address, meter type, the
-        retailer's terms, price changes, seasonal usage and when you use power. Retail rates in this app come only from retailers' own websites
-        (fetched automatically, with the URL and time), your own bills, and quotes you entered from a retailer's site. Always confirm the rates for your address with the retailer before switching.</p>
-    </section>
+        </section>
+      </div>
+    </details>
   </main>
-  <footer class="muted small">Prices in NZ dollars incl. 15% GST unless stated. Built for personal use.</footer>
+  <footer class="muted small">Prices in NZ dollars incl. 15% GST unless stated. Estimates only. Built for personal use.</footer>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>

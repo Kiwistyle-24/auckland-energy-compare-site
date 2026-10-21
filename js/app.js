@@ -1,4 +1,4 @@
-import { rankOffers, annualKwh, MONTH_NAMES, round2, inclGst, AVG_DAYS_PER_MONTH, isStale, STALE_DAYS, compareLowStandard, variantPairs, costOffer } from './calc.js';
+import { rankOffers, verdictFor, EFFECTIVELY_BEST_DOLLARS, annualKwh, MONTH_NAMES, round2, inclGst, AVG_DAYS_PER_MONTH, isStale, STALE_DAYS, compareLowStandard, variantPairs, costOffer } from './calc.js';
 import { validatePlan, validateUsageFile } from './schema.js';
 import { parseGenesisInvoice, mergeInvoices, InvoiceError } from './genesis-invoice.js';
 import { parseHourlyCsv, mergeHourly, hourlyCoverage, planSharesFromHourly, looksLikeHourlyCsv, HourlyError, seasonCoverage, DEFAULT_WINTER_WEIGHTS, MON } from './hourly.js';
@@ -24,7 +24,7 @@ let state = null;     // current inputs
 let selectedId = null;
 let HOURLY = [];      // hourly kWh rows from Genesis hourly CSVs (this browser only)
 
-const defaultPrefs = () => ({ fuels: 'both', userType: 'any', pricing: 'any', term: 'any', dualFuel: 'any', promptPay: true, oneOffCredits: true, allow: [] });
+const defaultPrefs = () => ({ fuels: 'both', userType: 'any', pricing: 'any', term: 'any', dualFuel: 'keep', promptPay: true, oneOffCredits: true, allow: [] });
 
 function billsScenario() {
   const d = USAGE?.default || { mode: 'average', elecKwh: 0, gasKwh: 0, shares: { night: 0.3, peak: 0.3, free: 1 / 7 } };
@@ -66,6 +66,8 @@ async function init() {
   // v2: default free-hours share is 1/7 (free Sundays); move the old untouched 10% default over once.
   if (state.shares && !state.freeShareV2) { if (state.shares.free === 0.1) state.shares.free = 1 / 7; state.freeShareV2 = true; }
   state.prefs = { ...defaultPrefs(), ...(state.prefs || {}) };
+  // v3: default gas pairing is "keep my current gas" (or the power retailer's own gas); move the old default over once.
+  if (!state.prefsV3) { if (state.prefs.dualFuel === 'any') state.prefs.dualFuel = 'keep'; state.prefsV3 = true; }
   renderBanner();
   bindInputs();
   bindForm();
@@ -136,6 +138,16 @@ function bindInputs() {
     state = billsScenario(); changed(true);
   });
   $('resetBills').addEventListener('click', () => { state = billsScenario(); changed(true); });
+  [['quickElec', 'elecKwh'], ['quickGas', 'gasKwh']].forEach(([id, k]) => $(id).addEventListener('input', (e) => {
+    state[k] = Math.max(0, +e.target.value || 0); state.mode = 'average'; changed(); $(k).value = state[k];
+  }));
+  $('showAll').addEventListener('click', () => { showAll = !showAll; renderResults(); });
+  // links that point into a closed panel open it first (e.g. "not yet priced", "sources")
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('[data-open]'); if (!a) return;
+    a.dataset.open.split(',').forEach((id) => { const d = $(id); if (d && 'open' in d) d.open = true; });
+  });
+  if (location.hash) { const t = document.querySelector(location.hash); const d = t?.closest('details'); if (d) d.open = true; }
 }
 
 function changed(full = false) {
@@ -250,53 +262,134 @@ function rateLine(p) {
   return `<div class="rates"><strong>${p.fuel === 'gas' ? 'Gas' : 'Power'}:</strong> ${esc(p.provider)} – ${esc(p.name)} ${userTag(p)}<br><span class="muted">${(inclGst(p.dailyCents, p.gstInclusive) / 100).toFixed(2)} $/day · ${r} (incl. GST)</span>${extra}</div>`;
 }
 
+let showAll = false;
+
+function offerWho(o) {
+  const b = baseline();
+  const keepGas = o.gasPlan && b?.gas && o.gasPlan === b.gas && o.elecPlan !== b.electricity;
+  const retailer = o.isBaseline ? `Your current plan (${[...new Set([o.elecPlan?.provider, o.gasPlan?.provider].filter(Boolean))].join(' + ')})` : (o.elecPlan || o.gasPlan).provider + (o.gasPlan && !keepGas && o.gasPlan.provider !== o.elecPlan?.provider && o.elecPlan ? ` + ${o.gasPlan.provider} gas` : '');
+  const plan = [o.elecPlan?.name, o.gasPlan && o.elecPlan ? (keepGas ? `keep your ${o.gasPlan.provider} gas` : o.bundle ? `${o.gasPlan.name} (dual fuel)` : o.gasPlan.name) : o.gasPlan?.name].filter(Boolean).join(' · ');
+  return { retailer, plan, short: o.elecPlan ? `${o.elecPlan.name} (${o.elecPlan.provider})` : `${o.gasPlan.name} (${o.gasPlan.provider})` };
+}
+
+function termLine(p) {
+  if (!p) return '';
+  const t = p.fixedTerm === true ? `fixed term${p.termMonths ? ` (${p.termMonths} months)` : ''}${p.exitFee ? `, exit fee ${p.exitFee}` : ', exit fee not stated'}` : p.fixedTerm === false ? `no fixed term${p.exitFee ? ` (exit fee: ${p.exitFee})` : ''}` : 'term and exit fees not shown in the source';
+  return `<div class="small"><strong>${esc(p.provider)} ${p.fuel === 'gas' ? 'gas' : 'power'}:</strong> ${esc(t)}</div>`;
+}
+
+function renderVerdict(offers, raw) {
+  const head = $('verdictHead'), body = $('verdictBody');
+  const hasGas = raw.gas > 0;
+  const fuels = state.prefs.fuels || 'both';
+  $('segFuels').hidden = !hasGas && fuels === 'both';
+  $('segFuels').querySelector('[data-v=gas]').hidden = fuels !== 'gas';
+  const noUsage = raw.elec + raw.gas === 0;
+  $('quickUsage').hidden = !!USAGE && !noUsage;
+  if (!$('quickUsage').hidden && document.activeElement?.closest?.('#quickUsage') == null) { $('quickElec').value = state.elecKwh || ''; $('quickGas').value = state.gasKwh || ''; }
+  const fig = (label, v, cls = '') => `<div class="fig ${cls}"><span class="fig-label">${label}</span><span class="fig-value">${money0(v)}<span class="per">/yr</span></span></div>`;
+  const what = { both: hasGas ? 'power and gas' : 'power', electricity: 'power', gas: 'gas' }[fuels];
+  const v = verdictFor(offers, { hasUsage: !noUsage });
+  const { base, alt, diff } = v;
+  const who = alt ? offerWho(alt).short : '';
+  body.dataset.kind = v.kind;
+  if (v.kind === 'no-usage') {
+    head.textContent = 'Are you on the best energy plan?';
+    body.innerHTML = '<p class="lead">Load your Genesis bills (PDF) or type your monthly usage to see what you\'d pay on every plan we could price. Everything stays in this browser.</p>';
+  } else if (v.kind === 'no-baseline') {
+    head.textContent = `Cheapest for your usage: ${offerWho(v.best).short}`;
+    body.innerHTML = `<div class="figs">${fig(`Cheapest (${what})`, v.best.annual, 'best')}</div><p class="lead">Load your bills to compare it with your current plan.</p>`;
+  } else if (v.kind === 'no-alternative') {
+    head.textContent = 'We couldn\'t price any open alternative';
+    body.innerHTML = `<div class="figs">${fig(`Your current plan (${what})`, base.annual)}</div><p class="lead">Add quotes under <a href="#notPricedPanel" data-open="notPricedPanel">Retailers not yet priced</a>.</p>`;
+  } else if (v.kind === 'best') {
+    head.textContent = 'You\'re on the best plan available';
+    body.innerHTML = `<div class="figs">${fig(`Your current plan (${what})`, base.annual, 'best')}${fig('Next cheapest', alt.annual)}</div><p class="lead">The next cheapest, ${esc(who)}, costs ${money0(-diff)}/yr more.</p>`;
+  } else if (v.kind === 'effectively-best') {
+    head.textContent = 'You\'re effectively on the best plan';
+    body.innerHTML = `<div class="figs">${fig(`Your current plan (${what})`, base.annual)}${fig('Cheapest available', alt.annual, 'best')}</div><p class="lead">The cheapest, ${esc(who)}, would save only ${money0(diff)}/yr (under ${money0(EFFECTIVELY_BEST_DOLLARS)}/yr), so switching isn't worth it for price alone.</p>`;
+  } else {
+    head.textContent = `You could save ${money0(diff)}/yr by switching to ${who}`;
+    body.innerHTML = `<div class="figs">${fig(`Your current plan (${what})`, base.annual)}${fig('Cheapest available', alt.annual, 'best')}</div>`;
+  }
+  const pick = v.kind === 'no-baseline' ? v.best : v.kind === 'save' || v.kind === 'effectively-best' ? alt : null;
+  if (pick?.assumptionDependent) body.innerHTML += `<p class="caveat small">${pick.splitFromHourly ? 'Its cost uses the time-of-use split from your hourly data.' : 'It\'s a time-of-use plan: its cost depends on when you use power (an assumed split). Load your hourly usage CSVs for a better estimate.'} <a href="#howPanel" data-open="howPanel">How this is calculated</a></p>`;
+}
+
+function renderFreshness() {
+  const used = (DATA.plans || []).filter((p) => ['automatic', 'snapshot'].includes(p.source?.method) && !p.closedToNewCustomers && p.source?.retrievedAt);
+  const oldest = used.map((p) => p.source.retrievedAt).sort()[0];
+  const priced = new Set(allPlans().filter((p) => p.source?.method !== 'bill' && !p.closedToNewCustomers && !p.isExample).map((p) => p.provider)).size;
+  const notPriced = quoteTodo().filter((p) => !p.partial).length;
+  const stale = oldest && isStale(oldest);
+  $('freshness').innerHTML = `${oldest ? `Prices from retailers' own sites, oldest retrieved ${fmtDate(oldest)}${stale ? ` <span class="tag stale">STALE</span>` : ''}` : 'No retailer prices loaded'} · ${priced} retailer${priced === 1 ? '' : 's'} priced · <a href="#notPricedPanel" data-open="notPricedPanel">${notPriced} not yet priced</a> · <a href="#sources" data-open="howPanel,sources">sources</a>`;
+  $('notPricedSummary').textContent = `${notPriced} retailer(s) need a quote from their own site · add a quote`;
+}
+
 function renderResults() {
   const prefs = state.prefs;
   const offers = rankOffers(allPlans(), costScenario(state), prefs, baseline());
-  const fuelsLabel = { both: 'electricity + gas', electricity: 'electricity only', gas: 'gas only' }[prefs.fuels || 'both'];
-  const a = annualKwh(state);
-  $('resultsFor').textContent = `(${fuelsLabel}; ${prefs.fuels === 'gas' ? '' : Math.round(a.elec).toLocaleString('en-NZ') + ' kWh power'}${prefs.fuels === 'both' ? ' and ' : ''}${prefs.fuels === 'electricity' ? '' : Math.round(a.gas).toLocaleString('en-NZ') + ' kWh gas'} a year)`;
+  const fuelsLabel = { both: 'power + gas', electricity: 'power only', gas: 'gas only' }[prefs.fuels || 'both'];
+  const raw = annualKwh(state);
+  const a = prefs.fuels === 'electricity' ? { elec: raw.elec, gas: 0 } : prefs.fuels === 'gas' ? { elec: 0, gas: raw.gas } : raw;
+  $('resultsFor').textContent = a.elec + a.gas ? `(${fuelsLabel}; ${[a.elec && `${Math.round(a.elec).toLocaleString('en-NZ')} kWh power`, a.gas && `${Math.round(a.gas).toLocaleString('en-NZ')} kWh gas`].filter(Boolean).join(' and ')} a year)` : '';
   const comparable = offers.filter((o) => !o.incomplete && !o.ineligible);
-  const best = comparable.find((o) => !o.closed) || comparable[0];
+  const ranked = comparable.filter((o) => !o.closed);
+  const best = ranked[0] || comparable[0];
   const base = offers.find((o) => o.isBaseline);
-  const openAlternatives = comparable.filter((o) => !o.isBaseline && !o.closed);
+  const alt = ranked.find((o) => !o.isBaseline);
   renderBaselineCheck();
+  renderVerdict(offers, raw);
+  renderFreshness();
+  $('best').innerHTML = best ? esc(best.label) : '';
 
-  const bestEl = $('best');
-  if (!offers.length || (a.elec + a.gas === 0)) bestEl.innerHTML = 'Enter your usage above (or click <strong>Load my bills</strong>) to see real annual costs. With zero usage only the daily charges are counted.';
-  else if (!openAlternatives.length) {
-    const cheaperClosed = comparable.filter((o) => o.closed && base && o.annual < base.annual);
-    bestEl.innerHTML = `${base ? `<div>Your current plan costs about <span class="big">${money0(base.annual)}</span> a year (${money(base.monthlyAvg)} a month on average).</div>` : ''}
-      <p class="small">None of the plans we could fetch from retailers' own websites is open to new customers${cheaperClosed.length ? ` (${cheaperClosed.length} closed plan(s) would be cheaper on paper, shown below for reference)` : ''}. Most retailers only show Auckland prices after an address lookup: use the links under <a href="#unavailable-h">Retailers we couldn't price automatically</a> and add their rates as a quote to rank them here.</p>`;
-  } else if (best.isBaseline) {
-    bestEl.innerHTML = `<div>✅ Your current plan is the cheapest open option here: <span class="big">${money0(best.annual)}</span> a year.</div>`;
-  } else {
-    const save = base ? base.annual - best.annual : null;
-    bestEl.innerHTML = `<div>Cheapest open option: <strong>${esc(best.label)}</strong></div><div class="big">${money0(best.annual)} / year <span class="small muted">(${money(best.monthlyAvg)} a month)</span></div>
-      ${save != null ? `<div>${save > 0 ? `About <strong>${money0(save)}</strong> a year cheaper than your current plan.` : 'Not cheaper than your current plan.'}</div>` : ''}`;
-  }
-
-  $('offerList').innerHTML = offers.map((o) => {
-    const v = o.vsBaselineAnnual;
-    const vs = o.isBaseline || v == null ? '' : `<span class="vs ${v > 0 ? 'pos' : v < 0 ? 'neg' : ''}">${v < 0 ? 'saves ' + money0(-v) : v > 0 ? money0(v) + ' more' : 'same as current'}/yr</span>`;
+  const noUsage = raw.elec + raw.gas === 0;
+  const rest = offers.filter((o) => !ranked.includes(o));
+  let shown = showAll ? [...ranked, ...rest] : ranked.slice(0, 5);
+  if (!showAll && base && !shown.includes(base)) shown.push(base);
+  if (noUsage) shown = [];
+  $('results').hidden = noUsage;
+  const ref = base || best;
+  $('offerList').innerHTML = shown.map((o) => {
+    const v = ref && o !== ref ? round2(o.annual - ref.annual) : null;
+    const pos = ranked.indexOf(o);
+    const diff = o.isBaseline ? 'current' : v == null ? 'cheapest' : Math.abs(v) < 0.5 ? 'same' : v < 0 ? `saves ${money0(-v)}` : `+${money0(v)}`;
     const ut = o.elecPlan?.userType || o.gasPlan?.userType;
     const cond = conditionsList(o);
+    const w = offerWho(o);
+    const tags = [ut === 'low' ? 'LOW USER' : ut === 'standard' ? 'STANDARD USER' : o.elecPlan?.userTypeNote ? 'USER TYPE NOT CONFIRMED (low or standard)' : '', o.bundle ? 'dual fuel' : '', o.closed ? 'CLOSED TO NEW CUSTOMERS' : '', o.splitFromHourly ? 'split from your hourly data' : o.assumptionDependent ? 'depends on your usage split' : '', o.elecPlan?.prepay ? 'prepay' : '', [o.elecPlan, o.gasPlan].some((p) => p?.source?.method === 'snapshot') ? 'quote snapshot' : ''].filter(Boolean);
     return `<li class="offer ${o === best ? 'best-row' : ''} ${o.isBaseline ? 'baseline-row' : ''} ${o.closed ? 'closed' : ''} ${o.ineligible || o.incomplete ? 'dim' : ''}" data-id="${esc(o.id)}">
-      <div class="offer-head">
-        <span class="rank">${o.rank}</span>
-        <div class="who"><strong>${esc(o.label)}</strong>
-          <div>${ut === 'low' ? '<span class="tag">LOW USER</span>' : ut === 'standard' ? '<span class="tag">STANDARD USER</span>' : o.elecPlan?.userTypeNote ? `<span class="tag" title="${esc(o.elecPlan.userTypeNote)}">USER TYPE NOT CONFIRMED (low or standard)</span>` : ''}${o.isBaseline ? '<span class="tag bill">current</span>' : ''}${o.bundle ? '<span class="tag">dual fuel</span>' : ''}${o.closed ? '<span class="tag stale">CLOSED TO NEW CUSTOMERS</span>' : ''}${o.splitFromHourly ? '<span class="tag bill">split from your hourly data</span>' : o.assumptionDependent ? '<span class="tag manual">depends on your usage split</span>' : ''}${o.elecPlan?.prepay ? '<span class="tag">prepay</span>' : ''}</div>
+      <details>
+        <summary class="line">
+          <span class="rank" aria-label="${pos >= 0 ? `rank ${pos + 1}` : 'not ranked'}">${pos >= 0 ? pos + 1 : '–'}</span>
+          <span class="who"><span class="retailer">${esc(w.retailer)}</span><span class="plan">${esc(w.plan)}</span></span>
+          <span class="cost">${money0(o.annual)}<span class="per">/yr</span></span>
+          <span class="diff ${o.isBaseline ? 'cur' : v > 0 ? 'pos' : v < 0 ? 'neg' : ''}">${esc(diff)}</span>
+          <span class="chev" aria-hidden="true"></span><span class="sr">Learn more</span>
+        </summary>
+        <div class="more">
+          ${tags.length ? `<div class="tags">${tags.map((t) => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}
+          <p class="small muted">${money(o.monthlyAvg)} a month on average${o.vsBaselineAnnual != null && !o.isBaseline ? ` · ${o.vsBaselineAnnual < 0 ? `${money(-o.vsBaselineAnnual)} a year less than your current plan` : `${money(o.vsBaselineAnnual)} a year more than your current plan`}` : ''}</p>
+          ${rateLine(o.elecPlan)}${o.gasPlan && o.gasPlan !== o.elecPlan ? rateLine(o.gasPlan) : ''}
+          ${termLine(o.elecPlan)}${o.gasPlan && o.gasPlan !== o.elecPlan ? termLine(o.gasPlan) : ''}
+          ${o.warnings.length ? `<div class="warn-text">${o.warnings.map(esc).join('<br>')}</div>` : ''}
+          ${o.assumptions.length ? `<div class="assume"><strong>How it's costed:</strong><ul>${o.assumptions.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''}
+          ${cond.length ? `<div class="cond"><strong>Conditions and credits (${cond.length}):</strong><ul>${cond.map((c) => `<li>${esc(c)}</li>`).join('')}</ul></div>` : ''}
+          <div class="srcs">${offerSource(o.elecPlan)}${o.gasPlan && o.gasPlan !== o.elecPlan ? offerSource(o.gasPlan) : ''}</div>
+          <button type="button" class="ghost small" data-chart="${esc(o.id)}">Month-by-month chart</button>
         </div>
-        <div class="cost"><span class="big">${money0(o.annual)}</span><span class="small muted">/yr · ${money0(o.monthlyAvg)}/mo</span>${vs}</div>
-      </div>
-      ${rateLine(o.elecPlan)}${o.gasPlan && o.gasPlan !== o.elecPlan ? rateLine(o.gasPlan) : ''}
-      ${o.warnings.length ? `<div class="warn-text">${o.warnings.map(esc).join('<br>')}</div>` : ''}
-      ${o.assumptions.length ? `<div class="assume">${o.assumptions.map((x) => `ⓘ ${esc(x)}`).join('<br>')}</div>` : ''}
-      ${cond.length ? `<details class="cond"><summary>Conditions (${cond.length})</summary><ul>${cond.map((c) => `<li>${esc(c)}</li>`).join('')}</ul></details>` : ''}
-      <div class="srcs">${offerSource(o.elecPlan)}${o.gasPlan && o.gasPlan !== o.elecPlan ? offerSource(o.gasPlan) : ''}</div>
+      </details>
     </li>`;
   }).join('');
-  $('offerList').querySelectorAll('li.offer').forEach((li) => li.addEventListener('click', (e) => { if (e.target.closest('a,summary')) return; selectedId = li.dataset.id; renderMonthChart(offers.find((o) => o.id === selectedId), base); }));
+  const total = offers.length;
+  $('showAll').hidden = noUsage || total <= shown.length && !showAll;
+  $('showAll').textContent = showAll ? 'Show top 5 only' : `Show all ${total} options`;
+  $('showAll').setAttribute('aria-expanded', String(showAll));
+  $('offerList').querySelectorAll('[data-chart]').forEach((b) => b.addEventListener('click', () => {
+    selectedId = b.dataset.chart; renderMonthChart(offers.find((o) => o.id === selectedId), base);
+    $('howPanel').open = true; document.querySelector('#howPanel details.charts').open = true;
+    $('monthChart').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }));
   renderUnavailable();
   renderLowStd();
   renderBarChart(comparable.slice(0, 12), best);
@@ -599,6 +692,7 @@ async function importBillFiles(files) {
   const msgs = [], parsed = [], csvRows = [];
   let json = null, csvFiles = 0;
   showBillsMsg([{ text: `Reading ${files.length} file(s) in this browser…` }]);
+  $('usagePanel').open = true;
   for (const f of files) {
     let buf;
     try { buf = await f.arrayBuffer(); } catch { msgs.push({ bad: true, text: `${f.name}: the file could not be opened.` }); continue; }

@@ -249,6 +249,8 @@ export function rankOffers(plans, scenarioIn, prefs = {}, baseline = null) {
     if (!wantGas) return [null];
     let candidates = gas;
     if (prefs.dualFuel === 'only') candidates = gas.filter((g) => (g.bundleGroup || g.provider) === (e.bundleGroup || e.provider));
+    // 'keep': switch power only, keeping your current gas, unless the power retailer also sells gas (then its own gas is considered too).
+    else if (prefs.dualFuel === 'keep' && baseline?.gas) candidates = gas.filter((g) => g === baseline.gas || (g.bundleGroup || g.provider) === (e.bundleGroup || e.provider));
     return candidates;
   };
 
@@ -328,4 +330,23 @@ export function variantPairs(plans) {
     if (!g[p.userType]) g[p.userType] = p;
   }
   return [...groups.values()];
+}
+
+// ---------- verdict ----------
+/** Savings under this many dollars a year count as "effectively the best plan". */
+export const EFFECTIVELY_BEST_DOLLARS = 25;
+/**
+ * The headline verdict from ranked offers (rankOffers output).
+ * kind: 'no-usage' | 'no-baseline' | 'no-alternative' | 'best' | 'effectively-best' | 'save'
+ * diff: current annual − cheapest open alternative (positive = you could save).
+ */
+export function verdictFor(offers, { threshold = EFFECTIVELY_BEST_DOLLARS, hasUsage = true } = {}) {
+  const ranked = (offers || []).filter((o) => !o.incomplete && !o.ineligible && !o.closed);
+  const base = (offers || []).find((o) => o.isBaseline) || null;
+  const alt = ranked.find((o) => !o.isBaseline) || null;
+  if (!hasUsage || !ranked.length) return { kind: 'no-usage', base, alt, best: null, diff: null };
+  if (!base) return { kind: 'no-baseline', base, alt, best: ranked[0], diff: null };
+  if (!alt) return { kind: 'no-alternative', base, alt, best: base, diff: null };
+  const diff = round2(base.annual - alt.annual);
+  return { kind: diff <= 0 ? 'best' : diff < threshold ? 'effectively-best' : 'save', base, alt, best: diff <= 0 ? base : alt, diff };
 }
