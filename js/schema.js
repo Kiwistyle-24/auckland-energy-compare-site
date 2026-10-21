@@ -24,6 +24,11 @@ export function validatePlan(p, where = 'plan') {
     }
     if (p.fuel === 'gas' && keys.some((k) => k !== 'anytime')) e.push(`${where}: gas plans only support rates.anytime`);
   }
+  if (p.monthlyRates !== undefined) {
+    if (!Array.isArray(p.monthlyRates) || p.monthlyRates.length !== 12) e.push(`${where}.monthlyRates must have 12 entries (Jan..Dec)`);
+    else p.monthlyRates.forEach((m, i) => { for (const [k, v] of Object.entries(m || {})) if (!RATE_KEYS.includes(k) || !isNum(v) || v < 0 || v > 200) e.push(`${where}.monthlyRates[${i}].${k} invalid`); });
+  }
+  if (p.requires !== undefined && (!Array.isArray(p.requires) || p.requires.some((r) => !['broadband', 'ev'].includes(r)))) e.push(`${where}.requires must be a list of broadband|ev`);
   if (!p.source || typeof p.source !== 'object') e.push(`${where}.source missing (every price needs a source)`);
   else {
     if (!['automatic', 'manual', 'bill', 'example'].includes(p.source.method)) e.push(`${where}.source.method must be automatic|manual|bill|example`);

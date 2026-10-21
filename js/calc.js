@@ -65,14 +65,18 @@ export function variableCents(plan, kwh, shares, gstRate = GST_RATE) {
  * Cost of one plan (single fuel) for one period. Returns dollars incl. GST, before bundle credits.
  * opts.promptPay: apply prompt-payment discount if the plan offers one.
  */
-export function periodCost(plan, { kwh, days }, shares, opts = {}, gstRate = GST_RATE) {
+export function periodCost(plan, { kwh, days, month }, shares, opts = {}, gstRate = GST_RATE) {
   const fixed = days * inclGst(Number(plan.dailyCents), plan.gstInclusive, gstRate);
-  const variable = variableCents(plan, kwh, shares, gstRate);
+  // Seasonal plans (e.g. Powershop) carry a rate set per calendar month; use that month's rates.
+  const mr = month && Array.isArray(plan.monthlyRates) ? plan.monthlyRates[month - 1] : null;
+  const variable = variableCents(mr ? { ...plan, rates: mr } : plan, kwh, shares, gstRate);
   let cents = fixed + variable;
   const d = plan.discounts || {};
   if (opts.promptPay !== false && d.promptPaymentPct) cents *= 1 - d.promptPaymentPct / 100;
   const monthsInPeriod = days / AVG_DAYS_PER_MONTH;
   let dollars = cents / 100 - (d.monthlyCreditDollars || 0) * monthsInPeriod;
+  // One-off sign-up credits (e.g. "$150 credit on a 1-year term") are spread over the first year.
+  if (opts.oneOffCredits !== false && d.oneOffCreditDollars) dollars -= d.oneOffCreditDollars * (days / 365);
   return { fixed: fixed / 100, variable: variable / 100, total: dollars };
 }
 
@@ -129,8 +133,8 @@ export function costOffer({ elecPlan, gasPlan }, scenario, opts = {}) {
   const periods = usagePeriods(scenario);
   const bundle = isBundle(elecPlan, gasPlan) ? bundleTerms(elecPlan, gasPlan) : null;
   const months = periods.map((p) => {
-    const e = elecPlan && p.elecKwh >= 0 ? periodCost(elecPlan, { kwh: p.elecKwh, days: p.days }, shares, opts) : null;
-    const g = gasPlan && p.gasKwh > 0 ? periodCost(gasPlan, { kwh: p.gasKwh, days: p.days }, shares, opts) : null;
+    const e = elecPlan && p.elecKwh >= 0 ? periodCost(elecPlan, { kwh: p.elecKwh, days: p.days, month: p.month }, shares, opts) : null;
+    const g = gasPlan && p.gasKwh > 0 ? periodCost(gasPlan, { kwh: p.gasKwh, days: p.days, month: p.month }, shares, opts) : null;
     let elec = e ? e.total : 0;
     let gas = g ? g.total : 0;
     let credit = 0;
@@ -152,6 +156,10 @@ export function costOffer({ elecPlan, gasPlan }, scenario, opts = {}) {
   }
   if (elecPlan?.userType === 'standard' && kwh.elec <= LOW_USER_THRESHOLD_KWH) warnings.push('You may qualify for a low-user version of this plan.');
   if (elecPlan && !planHasOnlyAnytime(elecPlan)) assumptions.push(touAssumption(elecPlan, shares, !!scenario.sharesFromBills));
+  if (elecPlan?.monthlyRates) assumptions.push('Seasonal prices: each month is costed at that month\'s rate from the retailer\'s quote.');
+  if (elecPlan?.timeBands) assumptions.push(`Time bands (as quoted): ${Object.entries(elecPlan.timeBands).filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join('; ')}.`);
+  for (const p of [elecPlan, gasPlan]) if (p?.discounts?.oneOffCreditDollars && opts.oneOffCredits !== false) assumptions.push(`Includes a one-off $${p.discounts.oneOffCreditDollars} ${p.provider} sign-up credit, spread over the first year (later years cost that much more).`);
+  if (bundle) assumptions.push(`Dual-fuel discount applied (${[elecPlan, gasPlan].map((p) => p?.discounts?.bundle?.condition).filter(Boolean)[0] || 'same retailer for both fuels'}).`);
   if (elecPlan?.freeHours) assumptions.push(`Free-hours plan: assumes ${pct(shares.free)} of your power use falls in the free hours (edit "When you use power"). The result depends heavily on this.`);
   if (scenario.gasKwh > 0 && scenario.mode !== 'seasonal' && !gasPlan) warnings.push('No gas plan included.');
   return { months, annual, monthlyAvg: round2(annual / 12), warnings, assumptions, ineligible, assumptionDependent: !!(elecPlan && !planHasOnlyAnytime(elecPlan)), bundle: !!bundle };
@@ -182,7 +190,10 @@ export function planHasOnlyAnytime(p) {
 /** Does a plan pass the user's preference filters? */
 export function passesPrefs(plan, prefs = {}) {
   if (!plan) return true;
-  if (plan.closedToNewCustomers && prefs.includeClosed === false) return false;
+  // Plans from retailers closed to new customers are never ranked (you cannot switch to them).
+  if (plan.closedToNewCustomers && plan.source?.method !== 'bill') return false;
+  // Plans that need something else (broadband, an EV) are only ranked if you say you have / want it.
+  if (Array.isArray(plan.requires) && plan.requires.some((r) => !(prefs.allow || []).includes(r))) return false;
   if (plan.isExample && !prefs.includeExamples) return false;
   if (plan.fuel === 'electricity' && prefs.userType && prefs.userType !== 'any' && plan.userType !== 'any' && plan.userType !== prefs.userType) return false;
   if (prefs.term === 'fixed' && plan.fixedTerm !== true) return false;
@@ -201,7 +212,7 @@ export function passesPrefs(plan, prefs = {}) {
  * The baseline (your current plan) is always included and flagged.
  */
 export function rankOffers(plans, scenarioIn, prefs = {}, baseline = null) {
-  const opts = { promptPay: prefs.promptPay !== false };
+  const opts = { promptPay: prefs.promptPay !== false, oneOffCredits: prefs.oneOffCredits !== false };
   const fuels = prefs.fuels || 'both'; // 'both' | 'electricity' | 'gas'
   const zero = (k) => ({ ...scenarioIn, [k]: 0, months: (scenarioIn.months || []).map((m) => ({ ...m, [k]: 0 })) });
   const scenario = fuels === 'electricity' ? zero('gasKwh') : fuels === 'gas' ? zero('elecKwh') : scenarioIn;

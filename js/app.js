@@ -21,7 +21,7 @@ let USAGE = null;     // my-usage.json
 let state = null;     // current inputs
 let selectedId = null;
 
-const defaultPrefs = () => ({ fuels: 'both', userType: 'any', pricing: 'any', term: 'any', dualFuel: 'any', promptPay: true, includeClosed: true });
+const defaultPrefs = () => ({ fuels: 'both', userType: 'any', pricing: 'any', term: 'any', dualFuel: 'any', promptPay: true, oneOffCredits: true, allow: [] });
 
 function billsScenario() {
   const d = USAGE?.default || { mode: 'average', elecKwh: 0, gasKwh: 0, shares: { night: 0.3, peak: 0.3, free: 0 } };
@@ -85,7 +85,10 @@ function bindInputs() {
   [['prefFuels', 'fuels'], ['prefUserType', 'userType'], ['prefPricing', 'pricing'], ['prefTerm', 'term'], ['prefDual', 'dualFuel']].forEach(([id, k]) =>
     $(id).addEventListener('change', (e) => { state.prefs[k] = e.target.value; changed(true); }));
   $('prefPrompt').addEventListener('change', (e) => { state.prefs.promptPay = e.target.checked; changed(); });
-  $('prefClosed').addEventListener('change', (e) => { state.prefs.includeClosed = e.target.checked; changed(); });
+  $('prefCredits').addEventListener('change', (e) => { state.prefs.oneOffCredits = e.target.checked; changed(); });
+  [['prefBroadband', 'broadband'], ['prefEv', 'ev']].forEach(([id, k]) => $(id).addEventListener('change', (e) => {
+    const set = new Set(state.prefs.allow || []); if (e.target.checked) set.add(k); else set.delete(k); state.prefs.allow = [...set]; changed();
+  }));
   [['segFuels', 'fuels'], ['segUser', 'userType']].forEach(([id, k]) => $(id).querySelectorAll('button').forEach((btn) =>
     btn.addEventListener('click', () => { state.prefs[k] = btn.dataset.v; changed(true); })));
   $('scaleSeasonal').addEventListener('click', () => {
@@ -143,7 +146,7 @@ function renderInputs() {
   $('shareFree').value = Math.round((state.shares.free || 0) * 100);
   $('prefUserType').value = state.prefs.userType; $('prefPricing').value = state.prefs.pricing;
   $('prefTerm').value = state.prefs.term; $('prefDual').value = state.prefs.dualFuel; $('prefPrompt').checked = state.prefs.promptPay !== false;
-  $('prefFuels').value = state.prefs.fuels || 'both'; $('prefClosed').checked = state.prefs.includeClosed !== false;
+  $('prefFuels').value = state.prefs.fuels || 'both'; $('prefCredits').checked = state.prefs.oneOffCredits !== false; $('prefBroadband').checked = (state.prefs.allow || []).includes('broadband'); $('prefEv').checked = (state.prefs.allow || []).includes('ev');
   [['segFuels', 'fuels', 'both'], ['segUser', 'userType', 'any']].forEach(([id, k, d]) => $(id).querySelectorAll('button').forEach((btn) => btn.setAttribute('aria-pressed', String(btn.dataset.v === (state.prefs[k] || d)))));
   $('sharesNote').textContent = USAGE?.default?.sharesNote || 'These shares are assumptions. Edit them to match your habits.';
   const u = USAGE;
@@ -208,7 +211,9 @@ function conditionsList(o) {
     const d = p.discounts || {};
     if (d.promptPaymentPct) items.push(`${d.promptPaymentPct}% prompt-payment discount${state.prefs.promptPay === false ? ' (not applied: you unticked it)' : ' (applied)'}.`);
     if (d.monthlyCreditDollars) items.push(`$${d.monthlyCreditDollars}/month credit (applied).`);
-    if (d.bundle) items.push(`Dual-fuel credit${d.bundle.monthlyCreditDollars ? ` $${d.bundle.monthlyCreditDollars}/month` : ''}${d.bundle.pct ? ` ${d.bundle.pct}%` : ''}${o.bundle ? ' (applied)' : ' (not applied: needs both fuels from the same retailer)'}.`);
+    if (d.bundle) items.push(`Dual-fuel credit${d.bundle.monthlyCreditDollars ? ` $${d.bundle.monthlyCreditDollars}/month` : ''}${d.bundle.dailyCreditCents ? ` ${d.bundle.dailyCreditCents}c/day` : ''}${d.bundle.pct ? ` ${d.bundle.pct}%` : ''}${o.bundle ? ' (applied)' : ' (not applied: needs both fuels from the same retailer)'}.`);
+    if (d.oneOffCreditDollars) items.push(`One-off $${d.oneOffCreditDollars} sign-up credit${state.prefs.oneOffCredits === false ? ' (not counted: you unticked it)' : ' (counted, spread over year 1)'}.`);
+    if (p.exitFee && p.fixedTerm !== true) items.push(`${p.provider}: exit fee: ${p.exitFee}.`);
     items.push(...c.filter((x) => !/^Low-user plan:/.test(x)));
   }
   return [...new Set(items)];
@@ -217,7 +222,14 @@ function rateLine(p) {
   if (!p) return '';
   const names = { anytime: 'anytime', day: 'day', night: 'night', peak: 'peak', offpeak: 'off-peak' };
   const r = Object.entries(p.rates).map(([k, v]) => `${names[k] || k} ${round2(inclGst(v, p.gstInclusive)).toFixed(2)}c/kWh`).join(' · ');
-  return `<div class="rates"><strong>${p.fuel === 'gas' ? 'Gas' : 'Power'}:</strong> ${esc(p.provider)} – ${esc(p.name)} ${userTag(p)}<br><span class="muted">${(inclGst(p.dailyCents, p.gstInclusive) / 100).toFixed(2)} $/day · ${r} (incl. GST)</span></div>`;
+  let extra = '';
+  if (Array.isArray(p.monthlyRates)) {
+    const all = p.monthlyRates.flatMap((m) => Object.values(m || {}));
+    extra = `<br><span class="muted small">Seasonal: ${Math.min(...all).toFixed(2)}–${Math.max(...all).toFixed(2)}c/kWh across the year (rates shown are this month's)</span>`;
+  }
+  if (p.timeBands) extra += `<br><span class="muted small">Time bands: ${esc(Object.entries(p.timeBands).filter(([, v]) => v).map(([k, v]) => `${k} ${v}`).join('; '))}</span>`;
+  if (p.requires?.length) extra += `<br><span class="tag manual">needs ${esc(p.requires.map((x) => (x === 'ev' ? 'an EV' : 'same-retailer broadband')).join(' + '))}</span>`;
+  return `<div class="rates"><strong>${p.fuel === 'gas' ? 'Gas' : 'Power'}:</strong> ${esc(p.provider)} – ${esc(p.name)} ${userTag(p)}<br><span class="muted">${(inclGst(p.dailyCents, p.gstInclusive) / 100).toFixed(2)} $/day · ${r} (incl. GST)</span>${extra}</div>`;
 }
 
 function renderResults() {
@@ -274,12 +286,22 @@ function renderResults() {
   renderMonthChart(sel, base);
 }
 
+function quoteTodo() {
+  // Retailers that are open to new customers but need a manual quote (whole retailer, or some fuels/plans).
+  return (DATA.providers || []).filter((p) => p.status !== 'closed' && !p.closedToNewCustomers && p.openToNewCustomers !== false && !p.notComparable)
+    .filter((p) => !(p.planCount > 0) || p.manualQuote)
+    .map((p) => ({ ...p, quoteUrl: p.manualQuote?.url || p.url, partial: p.planCount > 0 }));
+}
 function renderUnavailable() {
-  const statusText = { not_available_automatically: 'Not available', closed: 'Closed / not selling', needs_review: 'Needs review' };
-  const rows = (DATA.providers || []).filter((p) => !(p.planCount > 0));
-  $('unavailableList').innerHTML = rows.map((p) => `<li><div><strong>${esc(p.name)}</strong> <span class="tag ${p.status === 'closed' ? 'stale' : ''}">${esc(statusText[p.status] || p.status)}</span> <span class="small muted">${esc((p.fuels || []).join(' + '))}</span></div>
+  const statusText = { not_available_automatically: 'Needs manual quote', needs_review: 'Needs review', automatic: 'Partly priced' };
+  const rows = quoteTodo();
+  $('unavailableList').innerHTML = rows.map((p) => `<li><div><strong>${esc(p.name)}</strong> <span class="tag">${esc(p.partial ? `Partly priced (${p.planCount} plans) – rest needs a manual quote` : statusText[p.status] || p.status)}</span> <span class="small muted">${esc((p.fuels || []).join(' + '))}</span></div>
     <div class="small">${esc(p.reason || '')}</div>
-    <div class="small"><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.name)} pricing page ↗</a>${(p.links || []).map((l) => ` · <a href="${esc(l)}" target="_blank" rel="noopener">${esc(l.split('/').pop())} ↗</a>`).join('')} <span class="muted">· checked ${fmtDateTime(p.checkedAt)}</span></div></li>`).join('') || '<li class="muted small">None.</li>';
+    <div class="small"><a href="${esc(p.quoteUrl)}" target="_blank" rel="noopener">${esc(p.name)} quote page ↗</a>${p.quoteUrl !== p.url ? ` · <a href="${esc(p.url)}" target="_blank" rel="noopener">pricing page ↗</a>` : ''} <span class="muted">· checked ${fmtDateTime(p.checkedAt)}</span></div></li>`).join('') || '<li class="muted small">None.</li>';
+  const closed = (DATA.providers || []).filter((p) => p.status === 'closed' || p.closedToNewCustomers);
+  const nc = (DATA.providers || []).filter((p) => p.notComparable && !closed.includes(p));
+  $('excludedNote').innerHTML = (closed.length ? `Excluded (closed to new customers or no longer selling, never ranked): ${closed.map((p) => `<a href="${esc(p.url)}" target="_blank" rel="noopener" title="${esc(p.reason || '')}">${esc(p.name)}</a>`).join(', ')}.` : '')
+    + (nc.length ? ` Not compared: ${nc.map((p) => `<a href="${esc(p.url)}" target="_blank" rel="noopener" title="${esc(p.reason || '')}">${esc(p.name)}</a> (${esc(p.notComparable)})`).join(', ')}.` : '');
 }
 
 /** Does a published retailer plan match the rates printed on your bill? (Runs only in your browser.) */
@@ -292,7 +314,7 @@ function renderBaselineCheck() {
   const m = (DATA.plans || []).find((p) => p.fuel === 'electricity' && p.userType === b.userType && same(inclGst(p.dailyCents, p.gstInclusive), bi(b.dailyCents))
     && Object.keys(b.rates).length === Object.keys(p.rates).length && Object.entries(b.rates).every(([k, v]) => p.rates[k] !== undefined && same(inclGst(p.rates[k], p.gstInclusive), bi(v))));
   el.innerHTML = m
-    ? `<div class="rec small">✔ <strong>Bill check:</strong> your current electricity rates (${(bi(b.dailyCents) / 100).toFixed(2)} $/day + ${Object.values(b.rates).map((v) => bi(v).toFixed(2) + 'c/kWh').join(', ')} incl. GST) exactly match <strong>${esc(m.provider)} – ${esc(m.name)} (${esc(m.userType)} user)</strong> as published on <a href="${esc(m.source.url)}" target="_blank" rel="noopener">${esc(shortUrl(m.source.url))}</a> (retrieved ${fmtDateTime(m.source.retrievedAt)}).${/frank/i.test(m.provider) && /genesis/i.test(b.provider) ? ' Frank is a Genesis brand; Genesis itself does not publish Auckland rates.' : ''}</div>`
+    ? `<div class="rec small">✔ <strong>Bill check:</strong> your current electricity rates (${(bi(b.dailyCents) / 100).toFixed(2)} $/day + ${Object.values(b.rates).map((v) => bi(v).toFixed(2) + 'c/kWh').join(', ')} incl. GST) exactly match <strong>${esc(m.provider)} – ${esc(m.name)} (${esc(m.userType)} user)</strong> as published on <a href="${esc(m.source.url)}" target="_blank" rel="noopener">${esc(shortUrl(m.source.url))}</a> (retrieved ${fmtDateTime(m.source.retrievedAt)}).</div>`
     : `<div class="rec small warnbox">⚠ <strong>Bill check:</strong> no published retailer plan matches the rates on your bill exactly. Your retailer may have changed prices since that bill, or doesn't publish them.</div>`;
 }
 
@@ -384,7 +406,8 @@ function bindForm() {
       fixedTerm: $('fTerm').value === '' ? null : $('fTerm').value === 'true',
       discounts: { ...(num('fPrompt') ? { promptPaymentPct: num('fPrompt') } : {}), ...(num('fCredit') ? { monthlyCreditDollars: num('fCredit') } : {}), ...(Object.keys(bundle).length ? { bundle } : {}) },
       bundleGroup: provider.toLowerCase(),
-      conditions: $('fNotes').value.trim() || undefined,
+      conditions: [$('fNotes').value.trim(), $('fBands').value.trim() ? `Time bands: ${$('fBands').value.trim()}` : ''].filter(Boolean),
+      ...($('fBands').value.trim() ? { timeBands: { note: $('fBands').value.trim() } } : {}),
       ...($('fEffective').value ? { effectiveFrom: $('fEffective').value } : {}),
       source: { method: 'manual', url: $('fUrl').value.trim(), retrievedAt: dateToIso($('fDate').value) },
     };
@@ -418,6 +441,19 @@ function bindForm() {
     e.target.value = '';
   });
   renderManual();
+  renderQuoteTodo();
+}
+
+function renderQuoteTodo() {
+  const rows = quoteTodo();
+  $('quoteTodo').innerHTML = rows.length ? `<thead><tr><th>Retailer</th><th>What's missing</th><th>Quote page</th><th></th></tr></thead><tbody>${rows.map((p) => `<tr>
+    <td>${esc(p.name)}</td><td class="small">${esc(p.partial ? (p.manualQuote?.what || []).join(', ') || 'see reason' : (p.fuels || []).join(' + '))}</td>
+    <td class="small"><a href="${esc(p.quoteUrl)}" target="_blank" rel="noopener">${esc(shortUrl(p.quoteUrl))} ↗</a></td>
+    <td><button type="button" class="ghost small" data-fill="${esc(p.id)}">Fill form</button></td></tr>`).join('')}</tbody>` : '<tbody><tr><td class="muted">None.</td></tr></tbody>';
+  $('quoteTodo').querySelectorAll('[data-fill]').forEach((b) => b.addEventListener('click', () => {
+    const p = rows.find((x) => x.id === b.dataset.fill);
+    $('fProvider').value = p.name.replace(/\s*\(.*\)$/, ''); $('fUrl').value = p.quoteUrl; $('fName').focus();
+  }));
 }
 
 function renderManual() {

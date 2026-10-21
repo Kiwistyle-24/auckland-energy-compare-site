@@ -105,7 +105,11 @@
             </select>
           </label>
           <label class="inline"><input id="prefPrompt" type="checkbox" /> I'd get prompt-payment discounts</label>
-          <label class="inline"><input id="prefClosed" type="checkbox" /> Show plans closed to new customers</label>
+          <label class="inline"><input id="prefCredits" type="checkbox" /> Count one-off sign-up credits (spread over year 1)</label>
+          <span class="small muted">Also show plans that need:</span>
+          <label class="inline"><input id="prefBroadband" type="checkbox" /> broadband from the same retailer</label>
+          <label class="inline"><input id="prefEv" type="checkbox" /> an electric vehicle</label>
+          <p class="small muted">Retailers closed to new customers are never ranked.</p>
         </fieldset>
       </div>
 
@@ -128,9 +132,10 @@
       <div id="baselineCheck"></div>
       <div id="best" class="best"></div>
       <ol id="offerList" class="offers"></ol>
-      <h3 id="unavailable-h">Retailers we couldn't price automatically</h3>
-      <p class="small muted">These retailers don't publish Auckland prices that can be fetched from their own website (most need your address). Open their pricing page, then add the rates under <a href="#addplan">Add a quote</a>.</p>
+      <h3 id="unavailable-h">Needs a manual quote</h3>
+      <p class="small muted">These retailers are open to new customers, but their quote for an address can't be fetched automatically (the reason is given for each). Open their quote page, then add the rates under <a href="#addplan">Add a quote</a> to rank them here.</p>
       <ul id="unavailableList" class="unavail"></ul>
+      <p class="small muted" id="excludedNote"></p>
       <details class="charts">
         <summary>Charts</summary>
         <h3>Annual cost</h3>
@@ -157,8 +162,10 @@
 
     <section class="card" id="addplan">
       <h2>Add a quote</h2>
+      <h3>Retailers waiting for a quote</h3>
+      <div class="table-wrap"><table id="quoteTodo" class="compact"></table></div>
       <p class="small">Most retailers only show prices after you enter your address. Get the rates for your address from the <strong>retailer's own website</strong>
-        (links under "Retailers we couldn't price automatically"), then type them here. Comparison sites are not accepted as a source.
+        (quote links above and under "Needs a manual quote"), then type them here (c/kWh and c/day; choose incl. or excl. GST). Comparison sites are not accepted as a source.
         Quotes are saved in this browser. Use <em>Export</em> to save them into <code>data/manual-plans.json</code> in the repo.</p>
       <form id="planForm" class="grid">
         <fieldset>
@@ -195,6 +202,7 @@
           <label data-r="offpeak">Off-peak (c/kWh) <input id="fOffpeak" type="number" step="0.001" min="0" /></label>
           <label data-r="night">Night (c/kWh) <input id="fNight" type="number" step="0.001" min="0" /></label>
           <label class="inline"><input id="fFree" type="checkbox" /> Has free-power hours</label>
+          <label>Time bands (as stated by the retailer) <input id="fBands" placeholder="e.g. night 9pm–7am; peak 7–11am &amp; 5–9pm weekdays; free 9pm–12am" /></label>
           <label>Effective from (if stated) <input id="fEffective" type="date" /></label>
           <label class="inline"><input id="fBoth" type="checkbox" /> Also enter the other user-type version</label>
           <div id="otherVariant" hidden>
