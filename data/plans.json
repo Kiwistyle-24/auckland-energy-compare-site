@@ -10,7 +10,7 @@
     "Retailers closed to new customers are listed (with the reason) but their plans are never ranked.",
     "Vector network (lines) charges are included as context only: they are part of every retail price, not a plan you can buy.",
     "Low-user (low fixed charge) plans are being phased out: see lowFixedCharge for the rule and its source.",
-    "Quote snapshots (live quote disabled; shown as \"quote snapshot\" and flagged stale after 35 days; get a manual quote): Genesis Energy (12 plans, retrieved 21 Oct 2026), Contact Energy (4 plans, retrieved 21 Oct 2026), Mercury (9 plans, retrieved 21 Oct 2026), Powershop (2 plans, retrieved 21 Oct 2026).",
+    "Quote snapshots (live quote disabled; shown as \"quote snapshot\" and flagged stale after 35 days; get a manual quote): Genesis Energy (15 plans, retrieved 21 Oct 2026), Contact Energy (4 plans, retrieved 21 Oct 2026), Mercury (9 plans, retrieved 21 Oct 2026), Powershop (2 plans, retrieved 21 Oct 2026).",
     "Quote snapshots retrieved by hand in a browser at the property (never fetched by this app; shown as \"quote snapshot\", flagged stale after 35 days): Electric Kiwi (3 plans, retrieved 21 Oct 2026)."
   ],
   "networkCharges": {
@@ -168,6 +168,10 @@
         "Terms: https://www.genesisenergy.co.nz/terms/powerhome-plan-terms https://www.genesisenergy.co.nz/offer-terms/power-shout-terms",
         "Genesis quote gives rates both excl. and incl. GST; the incl. GST rate is used.",
         "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans.",
+        "Confirmed on Genesis's own website plan cards for the property (Genesis website quote, screenshots supplied by the user 21 Oct 2026 ~5:19pm NZDT, prices incl. GST): same daily and unit rates as this snapshot.",
+        "Leave anytime, no exit fee (as shown on the Genesis plan card).",
+        "Perk: 50 Power Shout hours (free power in hours you choose; not costed).",
+        "Plan card: \"$10 credit per month*\" (asterisk terms not visible); the snapshot's dual-fuel terms say it is the Home Bundle Rewards credit when you combine electricity and piped gas on PowerHome, so it is applied only with Genesis gas.",
         "Quote snapshot: Genesis Energy's live quote is no longer fetched automatically. Confirm current rates with Genesis Energy before switching."
       ],
       "effectiveFrom": null,
@@ -179,7 +183,14 @@
         "label": "Genesis Energy: quote snapshot (live quote lookup disabled)"
       },
       "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
-      "snapshot": true
+      "snapshot": true,
+      "confirmedBy": {
+        "method": "snapshot",
+        "url": "https://www.genesisenergy.co.nz/for-home/products/explore-pricing",
+        "retrievedAt": "2026-10-21T04:19:00.000Z",
+        "label": "Genesis website quote, screenshots supplied by the user 21 Oct 2026 (quote snapshot)",
+        "note": "Genesis website quote, screenshots supplied by the user 21 Oct 2026"
+      }
     },
     {
       "id": "genesis-powerhomeps50-standard",
@@ -215,6 +226,10 @@
         "Offer: HOME PH, Elec, 50 PSH.",
         "Terms: https://www.genesisenergy.co.nz/terms/powerhome-plan-terms https://www.genesisenergy.co.nz/offer-terms/power-shout-terms",
         "Genesis quote gives rates both excl. and incl. GST; the incl. GST rate is used.",
+        "Confirmed on Genesis's own website plan cards for the property (Genesis website quote, screenshots supplied by the user 21 Oct 2026 ~5:19pm NZDT, prices incl. GST): same daily and unit rates as this snapshot.",
+        "Leave anytime, no exit fee (as shown on the Genesis plan card).",
+        "Perk: 50 Power Shout hours (free power in hours you choose; not costed).",
+        "Plan card: \"$10 credit per month*\" (asterisk terms not visible); the snapshot's dual-fuel terms say it is the Home Bundle Rewards credit when you combine electricity and piped gas on PowerHome, so it is applied only with Genesis gas.",
         "Quote snapshot: Genesis Energy's live quote is no longer fetched automatically. Confirm current rates with Genesis Energy before switching."
       ],
       "effectiveFrom": null,
@@ -226,7 +241,14 @@
         "label": "Genesis Energy: quote snapshot (live quote lookup disabled)"
       },
       "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
-      "snapshot": true
+      "snapshot": true,
+      "confirmedBy": {
+        "method": "snapshot",
+        "url": "https://www.genesisenergy.co.nz/for-home/products/explore-pricing",
+        "retrievedAt": "2026-10-21T04:19:00.000Z",
+        "label": "Genesis website quote, screenshots supplied by the user 21 Oct 2026 (quote snapshot)",
+        "note": "Genesis website quote, screenshots supplied by the user 21 Oct 2026"
+      }
     },
     {
       "id": "genesis-evhome-low",
@@ -317,7 +339,7 @@
       "id": "genesis-evhomeps50-low",
       "retailerId": "genesis",
       "provider": "Genesis Energy",
-      "name": "EVHome (50 Power Shout hours)",
+      "name": "EVHome (50 Power Shout hours) – interim all-inclusive rate",
       "fuel": "electricity",
       "userType": "low",
       "variantGroup": "genesis-electricity-EVHOMEPS50",
@@ -332,36 +354,51 @@
       "fixedTerm": false,
       "termMonths": null,
       "exitFee": "None stated (no fixed term)",
-      "discounts": {},
+      "discounts": {
+        "bundle": {
+          "monthlyCreditDollars": 10,
+          "unconfirmed": true,
+          "condition": "EVHome card shows \"$10 credit per month**\"; conditions not shown (likely dual fuel / new customer, check Genesis terms)",
+          "sourceUrl": "https://www.genesisenergy.co.nz/for-home/products/explore-pricing"
+        }
+      },
       "requires": [
         "ev"
       ],
       "conditions": [
         "Electricity tariff \"EV Low All Inclusive\" and \"EV Low Daily Fixed\" (VECT EVHome Low ARHLC+ 2025).",
-        "EVHome: for households with an electric vehicle (see EVHome plan terms); EV-only night rates not costed.",
         "Incentive: 50 hours of free \"Power Shout\" power (you choose the hours; not costed here).",
         "Offer: HOME EVHOME, 50 PSH.",
         "Terms: https://www.genesisenergy.co.nz/terms/powerhome-plan-terms",
         "Genesis quote gives rates both excl. and incl. GST; the incl. GST rate is used.",
         "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans.",
+        "EVHome: for households with an electric vehicle (see EVHome plan terms); may require an EV, check eligibility. Perk: EVerywhere (EV public charging offer; not costed).",
+        "Interim all-inclusive rate: charged until your meter can be billed on time-varied (day/night) pricing; see the \"time-varied day/night\" version for the rates after that.",
+        "$10 credit per month**: EVHome card shows \"$10 credit per month**\"; conditions not shown (likely dual fuel / new customer, check Genesis terms). Not counted unless you tick \"Count credits whose conditions aren't shown\".",
+        "Confirmed on Genesis's own website plan cards for the property (Genesis website quote, screenshots supplied by the user 21 Oct 2026 ~5:19pm NZDT, prices incl. GST): same daily charge and the same (interim all-inclusive) unit rate.",
+        "Leave anytime, no exit fee (as shown on the Genesis plan card).",
+        "Perk: 50 Power Shout hours (free power in hours you choose; not costed).",
         "Quote snapshot: Genesis Energy's live quote is no longer fetched automatically. Confirm current rates with Genesis Energy before switching."
       ],
       "effectiveFrom": null,
       "effectiveNote": "No \"effective from\" date in Genesis's quote; rates are those quoted on the retrieval date.",
       "source": {
         "method": "snapshot",
-        "url": "https://www.genesisenergy.co.nz/join",
-        "retrievedAt": "2026-10-21T02:19:41.194Z",
-        "label": "Genesis Energy: quote snapshot (live quote lookup disabled)"
+        "url": "https://www.genesisenergy.co.nz/for-home/products/explore-pricing",
+        "retrievedAt": "2026-10-21T04:19:00.000Z",
+        "label": "Genesis website quote, screenshots supplied by the user 21 Oct 2026 (quote snapshot)",
+        "note": "Genesis website quote, screenshots supplied by the user 21 Oct 2026"
       },
       "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
-      "snapshot": true
+      "snapshot": true,
+      "bundleGroup": "genesis-homebundle",
+      "screenshotUpdate": true
     },
     {
       "id": "genesis-evhomeps50-standard",
       "retailerId": "genesis",
       "provider": "Genesis Energy",
-      "name": "EVHome (50 Power Shout hours)",
+      "name": "EVHome (50 Power Shout hours) – interim all-inclusive rate",
       "fuel": "electricity",
       "userType": "standard",
       "variantGroup": "genesis-electricity-EVHOMEPS50",
@@ -376,29 +413,44 @@
       "fixedTerm": false,
       "termMonths": null,
       "exitFee": "None stated (no fixed term)",
-      "discounts": {},
+      "discounts": {
+        "bundle": {
+          "monthlyCreditDollars": 10,
+          "unconfirmed": true,
+          "condition": "EVHome card shows \"$10 credit per month**\"; conditions not shown (likely dual fuel / new customer, check Genesis terms)",
+          "sourceUrl": "https://www.genesisenergy.co.nz/for-home/products/explore-pricing"
+        }
+      },
       "requires": [
         "ev"
       ],
       "conditions": [
         "Electricity tariff \"EV Standard All Inclusive\" and \"EV Standard Daily Fixed\" (VECT EVHome Standard ARHLC+ 2025).",
-        "EVHome: for households with an electric vehicle (see EVHome plan terms); EV-only night rates not costed.",
         "Incentive: 50 hours of free \"Power Shout\" power (you choose the hours; not costed here).",
         "Offer: HOME EVHOME, 50 PSH.",
         "Terms: https://www.genesisenergy.co.nz/terms/powerhome-plan-terms",
         "Genesis quote gives rates both excl. and incl. GST; the incl. GST rate is used.",
+        "EVHome: for households with an electric vehicle (see EVHome plan terms); may require an EV, check eligibility. Perk: EVerywhere (EV public charging offer; not costed).",
+        "Interim all-inclusive rate: charged until your meter can be billed on time-varied (day/night) pricing; see the \"time-varied day/night\" version for the rates after that.",
+        "$10 credit per month**: EVHome card shows \"$10 credit per month**\"; conditions not shown (likely dual fuel / new customer, check Genesis terms). Not counted unless you tick \"Count credits whose conditions aren't shown\".",
+        "Confirmed on Genesis's own website plan cards for the property (Genesis website quote, screenshots supplied by the user 21 Oct 2026 ~5:19pm NZDT, prices incl. GST): same daily charge and the same (interim all-inclusive) unit rate.",
+        "Leave anytime, no exit fee (as shown on the Genesis plan card).",
+        "Perk: 50 Power Shout hours (free power in hours you choose; not costed).",
         "Quote snapshot: Genesis Energy's live quote is no longer fetched automatically. Confirm current rates with Genesis Energy before switching."
       ],
       "effectiveFrom": null,
       "effectiveNote": "No \"effective from\" date in Genesis's quote; rates are those quoted on the retrieval date.",
       "source": {
         "method": "snapshot",
-        "url": "https://www.genesisenergy.co.nz/join",
-        "retrievedAt": "2026-10-21T02:19:41.194Z",
-        "label": "Genesis Energy: quote snapshot (live quote lookup disabled)"
+        "url": "https://www.genesisenergy.co.nz/for-home/products/explore-pricing",
+        "retrievedAt": "2026-10-21T04:19:00.000Z",
+        "label": "Genesis website quote, screenshots supplied by the user 21 Oct 2026 (quote snapshot)",
+        "note": "Genesis website quote, screenshots supplied by the user 21 Oct 2026"
       },
       "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
-      "snapshot": true
+      "snapshot": true,
+      "bundleGroup": "genesis-homebundle",
+      "screenshotUpdate": true
     },
     {
       "id": "genesis-standard-low",
@@ -511,6 +563,7 @@
         "Offer: HOME GasHome.",
         "Terms: https://www.genesisenergy.co.nz/terms/powerhome-plan-terms",
         "Genesis quote gives rates both excl. and incl. GST; the incl. GST rate is used.",
+        "Confirmed on Genesis's own website plan cards for the property (Genesis website quote, screenshots supplied by the user 21 Oct 2026 ~5:19pm NZDT, prices incl. GST): same daily and unit rates as this snapshot.",
         "Quote snapshot: Genesis Energy's live quote is no longer fetched automatically. Confirm current rates with Genesis Energy before switching."
       ],
       "effectiveFrom": null,
@@ -522,7 +575,14 @@
         "label": "Genesis Energy: quote snapshot (live quote lookup disabled)"
       },
       "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
-      "snapshot": true
+      "snapshot": true,
+      "confirmedBy": {
+        "method": "snapshot",
+        "url": "https://www.genesisenergy.co.nz/for-home/products/explore-pricing",
+        "retrievedAt": "2026-10-21T04:19:00.000Z",
+        "label": "Genesis website quote, screenshots supplied by the user 21 Oct 2026 (quote snapshot)",
+        "note": "Genesis website quote, screenshots supplied by the user 21 Oct 2026"
+      }
     },
     {
       "id": "genesis-gas-gashome-standard",
@@ -558,6 +618,7 @@
         "Offer: HOME GasHome.",
         "Terms: https://www.genesisenergy.co.nz/terms/powerhome-plan-terms",
         "Genesis quote gives rates both excl. and incl. GST; the incl. GST rate is used.",
+        "Confirmed on Genesis's own website plan cards for the property (Genesis website quote, screenshots supplied by the user 21 Oct 2026 ~5:19pm NZDT, prices incl. GST): same daily and unit rates as this snapshot.",
         "Quote snapshot: Genesis Energy's live quote is no longer fetched automatically. Confirm current rates with Genesis Energy before switching."
       ],
       "effectiveFrom": null,
@@ -569,7 +630,14 @@
         "label": "Genesis Energy: quote snapshot (live quote lookup disabled)"
       },
       "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
-      "snapshot": true
+      "snapshot": true,
+      "confirmedBy": {
+        "method": "snapshot",
+        "url": "https://www.genesisenergy.co.nz/for-home/products/explore-pricing",
+        "retrievedAt": "2026-10-21T04:19:00.000Z",
+        "label": "Genesis website quote, screenshots supplied by the user 21 Oct 2026 (quote snapshot)",
+        "note": "Genesis website quote, screenshots supplied by the user 21 Oct 2026"
+      }
     },
     {
       "id": "genesis-gas-standard-low",
@@ -648,6 +716,190 @@
       },
       "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
       "snapshot": true
+    },
+    {
+      "id": "genesis-powerhomeps50-tou-standard",
+      "retailerId": "genesis",
+      "provider": "Genesis Energy",
+      "name": "PowerHome (50 Power Shout hours) – time varied pricing",
+      "fuel": "electricity",
+      "userType": "standard",
+      "variantGroup": "genesis-electricity-POWERHOMEPS50-TOU",
+      "gstInclusive": true,
+      "publishedGst": "incl",
+      "dailyCents": 262.75,
+      "rates": {
+        "day": 30.48,
+        "night": 20.64
+      },
+      "region": "Vector network, Auckland",
+      "closedToNewCustomers": false,
+      "fixedTerm": false,
+      "termMonths": null,
+      "exitFee": "None stated (no fixed term)",
+      "discounts": {
+        "bundle": {
+          "monthlyCreditDollars": 10,
+          "condition": "$10 monthly credit when you combine electricity and piped gas",
+          "sourceUrl": "https://www.genesisenergy.co.nz/for-home/products/dual-fuel"
+        }
+      },
+      "bundleGroup": "genesis-homebundle",
+      "conditions": [
+        "PowerHome with \"Time varied pricing\" switched on (Genesis plan card, standard user): Day (7am–9pm) and Night (9pm–7am) rates, every day.",
+        "Meter change cost: up to $210 (one-off). Counted at $210, spread over the first 12 months; the card shows \"without the meter change\" too.",
+        "Low-user time-varied PowerHome: not shown on the card, so not included.",
+        "Leave anytime, no exit fee (as shown on the Genesis plan card).",
+        "Perk: 50 Power Shout hours (free power in hours you choose; not costed).",
+        "Plan card: \"$10 credit per month*\" (asterisk terms not visible); the snapshot's dual-fuel terms say it is the Home Bundle Rewards credit when you combine electricity and piped gas on PowerHome, so it is applied only with Genesis gas.",
+        "Terms: https://www.genesisenergy.co.nz/terms/powerhome-plan-terms https://www.genesisenergy.co.nz/offer-terms/power-shout-terms",
+        "Quote snapshot: Genesis website plan card (screenshots supplied by the user, 21 Oct 2026); not fetched by this app. Confirm current rates with Genesis Energy before switching."
+      ],
+      "effectiveFrom": null,
+      "effectiveNote": "No \"effective from\" date on the Genesis plan card; rates are those shown on the screenshot date.",
+      "source": {
+        "method": "snapshot",
+        "url": "https://www.genesisenergy.co.nz/for-home/products/explore-pricing",
+        "retrievedAt": "2026-10-21T04:19:00.000Z",
+        "label": "Genesis website quote, screenshots supplied by the user 21 Oct 2026 (quote snapshot)",
+        "note": "Genesis website quote, screenshots supplied by the user 21 Oct 2026"
+      },
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
+      "snapshot": true,
+      "timeBands": {
+        "day": "Day (7am-9pm)",
+        "night": "Night (9pm-7am)"
+      },
+      "upfrontCostDollars": 210,
+      "upfrontCostNote": "meter change cost of up to $210 (counted at the full $210)",
+      "screenshotUpdate": true
+    },
+    {
+      "id": "genesis-evhomeps50-tou-low",
+      "retailerId": "genesis",
+      "provider": "Genesis Energy",
+      "name": "EVHome (50 Power Shout hours) – time-varied day/night",
+      "fuel": "electricity",
+      "userType": "low",
+      "variantGroup": "genesis-electricity-EVHOMEPS50-TOU",
+      "gstInclusive": true,
+      "publishedGst": "incl",
+      "dailyCents": 167.33,
+      "rates": {
+        "day": 38.28,
+        "night": 19.12
+      },
+      "region": "Vector network, Auckland",
+      "closedToNewCustomers": false,
+      "fixedTerm": false,
+      "termMonths": null,
+      "exitFee": "None stated (no fixed term)",
+      "discounts": {
+        "bundle": {
+          "monthlyCreditDollars": 10,
+          "unconfirmed": true,
+          "condition": "EVHome card shows \"$10 credit per month**\"; conditions not shown (likely dual fuel / new customer, check Genesis terms)",
+          "sourceUrl": "https://www.genesisenergy.co.nz/for-home/products/explore-pricing"
+        }
+      },
+      "requires": [
+        "ev"
+      ],
+      "conditions": [
+        "EVHome \"50% cheaper electricity between 9pm-7am\" (Genesis plan card, low user): Day (7am–9pm) and Night (9pm–7am) rates for all household use, every day.",
+        "EVHome: for households with an electric vehicle (see EVHome plan terms); may require an EV, check eligibility. Perk: EVerywhere (EV public charging offer; not costed).",
+        "Until your meter supports time-varied pricing you pay the interim all-inclusive rate (28.91c/kWh); see the \"interim all-inclusive rate\" version.",
+        "A meter change may be needed (the PowerHome card shows up to $210); no cost is shown on the EVHome card, so none is counted.",
+        "$10 credit per month**: EVHome card shows \"$10 credit per month**\"; conditions not shown (likely dual fuel / new customer, check Genesis terms). Not counted unless you tick \"Count credits whose conditions aren't shown\".",
+        "Leave anytime, no exit fee (as shown on the Genesis plan card).",
+        "Perk: 50 Power Shout hours (free power in hours you choose; not costed).",
+        "Low-user plan: only for your main home using up to 8,000 kWh a year (Auckland). The low fixed charge regulations end on 1 April 2027, after which retailers may change or drop low-user plans.",
+        "Terms: https://www.genesisenergy.co.nz/terms/powerhome-plan-terms",
+        "Quote snapshot: Genesis website plan card (screenshots supplied by the user, 21 Oct 2026); not fetched by this app. Confirm current rates with Genesis Energy before switching."
+      ],
+      "effectiveFrom": null,
+      "effectiveNote": "No \"effective from\" date on the Genesis plan card; rates are those shown on the screenshot date.",
+      "source": {
+        "method": "snapshot",
+        "url": "https://www.genesisenergy.co.nz/for-home/products/explore-pricing",
+        "retrievedAt": "2026-10-21T04:19:00.000Z",
+        "label": "Genesis website quote, screenshots supplied by the user 21 Oct 2026 (quote snapshot)",
+        "note": "Genesis website quote, screenshots supplied by the user 21 Oct 2026"
+      },
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
+      "snapshot": true,
+      "timeBands": {
+        "day": "Day (7am - 9pm)",
+        "night": "Night (9pm - 7am)"
+      },
+      "interimRates": {
+        "anytime": 28.91
+      },
+      "bundleGroup": "genesis-homebundle",
+      "screenshotUpdate": true
+    },
+    {
+      "id": "genesis-evhomeps50-tou-standard",
+      "retailerId": "genesis",
+      "provider": "Genesis Energy",
+      "name": "EVHome (50 Power Shout hours) – time-varied day/night",
+      "fuel": "electricity",
+      "userType": "standard",
+      "variantGroup": "genesis-electricity-EVHOMEPS50-TOU",
+      "gstInclusive": true,
+      "publishedGst": "incl",
+      "dailyCents": 261.88,
+      "rates": {
+        "day": 34.01,
+        "night": 16.99
+      },
+      "region": "Vector network, Auckland",
+      "closedToNewCustomers": false,
+      "fixedTerm": false,
+      "termMonths": null,
+      "exitFee": "None stated (no fixed term)",
+      "discounts": {
+        "bundle": {
+          "monthlyCreditDollars": 10,
+          "unconfirmed": true,
+          "condition": "EVHome card shows \"$10 credit per month**\"; conditions not shown (likely dual fuel / new customer, check Genesis terms)",
+          "sourceUrl": "https://www.genesisenergy.co.nz/for-home/products/explore-pricing"
+        }
+      },
+      "requires": [
+        "ev"
+      ],
+      "conditions": [
+        "EVHome \"50% cheaper electricity between 9pm-7am\" (Genesis plan card, standard user): Day (7am–9pm) and Night (9pm–7am) rates for all household use, every day.",
+        "EVHome: for households with an electric vehicle (see EVHome plan terms); may require an EV, check eligibility. Perk: EVerywhere (EV public charging offer; not costed).",
+        "Until your meter supports time-varied pricing you pay the interim all-inclusive rate (24.63c/kWh); see the \"interim all-inclusive rate\" version.",
+        "A meter change may be needed (the PowerHome card shows up to $210); no cost is shown on the EVHome card, so none is counted.",
+        "$10 credit per month**: EVHome card shows \"$10 credit per month**\"; conditions not shown (likely dual fuel / new customer, check Genesis terms). Not counted unless you tick \"Count credits whose conditions aren't shown\".",
+        "Leave anytime, no exit fee (as shown on the Genesis plan card).",
+        "Perk: 50 Power Shout hours (free power in hours you choose; not costed).",
+        "Terms: https://www.genesisenergy.co.nz/terms/powerhome-plan-terms",
+        "Quote snapshot: Genesis website plan card (screenshots supplied by the user, 21 Oct 2026); not fetched by this app. Confirm current rates with Genesis Energy before switching."
+      ],
+      "effectiveFrom": null,
+      "effectiveNote": "No \"effective from\" date on the Genesis plan card; rates are those shown on the screenshot date.",
+      "source": {
+        "method": "snapshot",
+        "url": "https://www.genesisenergy.co.nz/for-home/products/explore-pricing",
+        "retrievedAt": "2026-10-21T04:19:00.000Z",
+        "label": "Genesis website quote, screenshots supplied by the user 21 Oct 2026 (quote snapshot)",
+        "note": "Genesis website quote, screenshots supplied by the user 21 Oct 2026"
+      },
+      "quoteFor": "Address-specific quote for one Vector-network Auckland property (rates shown for that property's meter set-up).",
+      "snapshot": true,
+      "timeBands": {
+        "day": "Day (7am - 9pm)",
+        "night": "Night (9pm - 7am)"
+      },
+      "interimRates": {
+        "anytime": 24.63
+      },
+      "bundleGroup": "genesis-homebundle",
+      "screenshotUpdate": true
     },
     {
       "id": "contact-basic-low",
@@ -1767,7 +2019,7 @@
         "genesisenergy.co.nz"
       ],
       "status": "not_available_automatically",
-      "reason": "Live quote disabled: Genesis's \"Find your rates\" quote is answered by its join app's internal API (an undocumented endpoint, not a public page), which is not an allowed method, so it is no longer called. The 12 plans shown are a quote snapshot retrieved 21 Oct 2026 (flagged stale after 35 days). Get a current quote (current electricity rates, piped gas, dual-fuel (Home Bundle Rewards) credit) on Genesis Energy's site and add it under \"Add a quote\".",
+      "reason": "Live quote disabled: Genesis's \"Find your rates\" quote is answered by its join app's internal API (an undocumented endpoint, not a public page), which is not an allowed method, so it is no longer called. The 15 plans shown are a quote snapshot retrieved 21 Oct 2026 (flagged stale after 35 days). Get a current quote (current electricity rates, piped gas, dual-fuel (Home Bundle Rewards) credit) on Genesis Energy's site and add it under \"Add a quote\".",
       "manualQuote": {
         "url": "https://www.genesisenergy.co.nz/join",
         "what": [
@@ -1778,10 +2030,10 @@
       },
       "snapshot": true,
       "snapshotRetrievedAt": "2026-10-21T02:19:41.194Z",
-      "planCount": 12,
+      "liveQuoteDisabled": true,
+      "planCount": 15,
       "checkedAt": "2026-10-21T02:19:41.194Z",
-      "httpStatus": null,
-      "liveQuoteDisabled": true
+      "httpStatus": null
     },
     {
       "id": "frank",
@@ -2576,6 +2828,14 @@
       "label": "Electric Kiwi: join app quote at the property, retrieved by hand in a browser (quote snapshot; session URL not stored)",
       "method": "GET",
       "retrievedAt": "2026-10-21T03:19:00.000Z",
+      "status": "manual",
+      "httpStatus": null
+    },
+    {
+      "url": "https://www.genesisenergy.co.nz/for-home/products/explore-pricing",
+      "label": "Genesis Energy: website plan cards for the property (Genesis website quote, screenshots supplied by the user 21 Oct 2026; quote snapshot)",
+      "method": "GET",
+      "retrievedAt": "2026-10-21T04:19:00.000Z",
       "status": "manual",
       "httpStatus": null
     }

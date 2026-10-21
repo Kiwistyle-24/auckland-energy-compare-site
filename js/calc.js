@@ -77,6 +77,9 @@ export function periodCost(plan, { kwh, days, month }, shares, opts = {}, gstRat
   let dollars = cents / 100 - (d.monthlyCreditDollars || 0) * monthsInPeriod;
   // One-off sign-up credits (e.g. "$150 credit on a 1-year term") are spread over the first year.
   if (opts.oneOffCredits !== false && d.oneOffCreditDollars) dollars -= d.oneOffCreditDollars * (days / 365);
+  // One-off upfront costs (e.g. "meter change cost up to $210") are spread over the first 12 months; always counted
+  // unless opts.upfrontCosts === false (used to show the cost from year 2).
+  if (opts.upfrontCosts !== false && plan.upfrontCostDollars) dollars += plan.upfrontCostDollars * (days / 365);
   return { fixed: fixed / 100, variable: variable / 100, total: dollars };
 }
 
@@ -112,8 +115,11 @@ export function isBundle(elecPlan, gasPlan) {
   return a === b && !!(elecPlan.discounts?.bundle || gasPlan.discounts?.bundle);
 }
 
-function bundleTerms(elecPlan, gasPlan) {
+function bundleTerms(elecPlan, gasPlan, opts = {}) {
   const b = { pct: 0, monthlyCreditDollars: 0, dailyCreditCents: 0, gstInclusive: true };
+  // A credit whose conditions the retailer's page doesn't show is only counted when asked to (conservative default);
+  // then the other fuel's bundle credit isn't assumed for this pairing either.
+  if ([elecPlan, gasPlan].some((p) => p?.discounts?.bundle?.unconfirmed) && !opts.unconfirmedCredits) return null;
   for (const p of [elecPlan, gasPlan]) {
     const x = p?.discounts?.bundle;
     if (!x) continue;
@@ -135,7 +141,7 @@ export function costOffer({ elecPlan, gasPlan }, scenario, opts = {}) {
   const hourly = elecPlan ? scenario.planShares?.[elecPlan.id] : null;
   const eShares = hourly ? { ...shares, ...hourly.shares } : shares;
   const periods = usagePeriods(scenario);
-  const bundle = isBundle(elecPlan, gasPlan) ? bundleTerms(elecPlan, gasPlan) : null;
+  const bundle = isBundle(elecPlan, gasPlan) ? bundleTerms(elecPlan, gasPlan, opts) : null; // null: not a bundle, or its credit isn't counted
   const months = periods.map((p) => {
     const e = elecPlan && p.elecKwh >= 0 ? periodCost(elecPlan, { kwh: p.elecKwh, days: p.days, month: p.month }, hourly?.monthShares?.[p.month - 1] ? { ...shares, ...hourly.monthShares[p.month - 1] } : eShares, opts) : null;
     const g = gasPlan && p.gasKwh > 0 ? periodCost(gasPlan, { kwh: p.gasKwh, days: p.days, month: p.month }, shares, opts) : null;
@@ -164,6 +170,11 @@ export function costOffer({ elecPlan, gasPlan }, scenario, opts = {}) {
   if (elecPlan?.monthlyRates) assumptions.push('Seasonal prices: each month is costed at that month\'s rate from the retailer\'s quote.');
   if (elecPlan?.timeBands) assumptions.push(`Time bands (as quoted): ${Object.entries(elecPlan.timeBands).filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join('; ')}.`);
   for (const p of [elecPlan, gasPlan]) if (p?.discounts?.oneOffCreditDollars && opts.oneOffCredits !== false) assumptions.push(`Includes a one-off $${p.discounts.oneOffCreditDollars} ${p.provider} sign-up credit, spread over the first year (later years cost that much more).`);
+  for (const p of [elecPlan, gasPlan]) if (p?.upfrontCostDollars && opts.upfrontCosts !== false) assumptions.push(`Includes a one-off ${p.upfrontCostNote || `$${p.upfrontCostDollars} upfront cost`} spread over the first 12 months (later years cost $${p.upfrontCostDollars} less).`);
+  for (const p of [elecPlan, gasPlan]) {
+    const x = p?.discounts?.bundle;
+    if (x?.unconfirmed && isBundle(elecPlan, gasPlan)) assumptions.push(opts.unconfirmedCredits ? `Counts ${p.provider}'s $${x.monthlyCreditDollars}/month credit although its conditions are not shown (${x.condition || 'check the retailer\'s terms'}).` : `Not counted: ${p.provider}'s $${x.monthlyCreditDollars}/month credit, because its conditions are not shown (${x.condition || 'check the retailer\'s terms'}). Tick "Count credits whose conditions aren't shown" to include it.`);
+  }
   if (bundle) assumptions.push(`Dual-fuel discount applied (${[elecPlan, gasPlan].map((p) => p?.discounts?.bundle?.condition).filter(Boolean)[0] || 'same retailer for both fuels'}).`);
   if (elecPlan?.freeHours && !hourly) assumptions.push(`Free-hours plan: assumes ${pct(shares.free)} of your power use falls in the free hours (edit "When you use power"). The result depends heavily on this.`);
   if (scenario.gasKwh > 0 && scenario.mode !== 'seasonal' && !gasPlan) warnings.push('No gas plan included.');
@@ -217,7 +228,7 @@ export function passesPrefs(plan, prefs = {}) {
  * The baseline (your current plan) is always included and flagged.
  */
 export function rankOffers(plans, scenarioIn, prefs = {}, baseline = null) {
-  const opts = { promptPay: prefs.promptPay !== false, oneOffCredits: prefs.oneOffCredits !== false };
+  const opts = { promptPay: prefs.promptPay !== false, oneOffCredits: prefs.oneOffCredits !== false, unconfirmedCredits: !!prefs.unconfirmedCredits };
   const fuels = prefs.fuels || 'both'; // 'both' | 'electricity' | 'gas'
   const zero = (k) => ({ ...scenarioIn, [k]: 0, months: (scenarioIn.months || []).map((m) => ({ ...m, [k]: 0 })) });
   const scenario = fuels === 'electricity' ? zero('gasKwh') : fuels === 'gas' ? zero('elecKwh') : scenarioIn;

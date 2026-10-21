@@ -24,7 +24,7 @@ let state = null;     // current inputs
 let selectedId = null;
 let HOURLY = [];      // hourly kWh rows from Genesis hourly CSVs (this browser only)
 
-const defaultPrefs = () => ({ fuels: 'both', userType: 'any', pricing: 'any', term: 'any', dualFuel: 'keep', promptPay: true, oneOffCredits: true, allow: [] });
+const defaultPrefs = () => ({ fuels: 'both', userType: 'any', pricing: 'any', term: 'any', dualFuel: 'keep', promptPay: true, oneOffCredits: true, unconfirmedCredits: false, allow: [] });
 
 function billsScenario() {
   const d = USAGE?.default || { mode: 'average', elecKwh: 0, gasKwh: 0, shares: { night: 0.3, peak: 0.3, free: 1 / 7 } };
@@ -104,6 +104,7 @@ function bindInputs() {
     $(id).addEventListener('change', (e) => { state.prefs[k] = e.target.value; changed(true); }));
   $('prefPrompt').addEventListener('change', (e) => { state.prefs.promptPay = e.target.checked; changed(); });
   $('prefCredits').addEventListener('change', (e) => { state.prefs.oneOffCredits = e.target.checked; changed(); });
+  $('prefUnconfirmed').addEventListener('change', (e) => { state.prefs.unconfirmedCredits = e.target.checked; changed(); });
   [['prefBroadband', 'broadband'], ['prefEv', 'ev']].forEach(([id, k]) => $(id).addEventListener('change', (e) => {
     const set = new Set(state.prefs.allow || []); if (e.target.checked) set.add(k); else set.delete(k); state.prefs.allow = [...set]; changed();
   }));
@@ -174,7 +175,7 @@ function renderInputs() {
   $('shareFree').value = Math.round((state.shares.free || 0) * 1000) / 10;
   $('prefUserType').value = state.prefs.userType; $('prefPricing').value = state.prefs.pricing;
   $('prefTerm').value = state.prefs.term; $('prefDual').value = state.prefs.dualFuel; $('prefPrompt').checked = state.prefs.promptPay !== false;
-  $('prefFuels').value = state.prefs.fuels || 'both'; $('prefCredits').checked = state.prefs.oneOffCredits !== false; $('prefBroadband').checked = (state.prefs.allow || []).includes('broadband'); $('prefEv').checked = (state.prefs.allow || []).includes('ev');
+  $('prefFuels').value = state.prefs.fuels || 'both'; $('prefCredits').checked = state.prefs.oneOffCredits !== false; $('prefUnconfirmed').checked = !!state.prefs.unconfirmedCredits; $('prefBroadband').checked = (state.prefs.allow || []).includes('broadband'); $('prefEv').checked = (state.prefs.allow || []).includes('ev');
   [['segFuels', 'fuels', 'both'], ['segUser', 'userType', 'any']].forEach(([id, k, d]) => $(id).querySelectorAll('button').forEach((btn) => btn.setAttribute('aria-pressed', String(btn.dataset.v === (state.prefs[k] || d)))));
   $('sharesNote').textContent = USAGE?.default?.sharesNote || 'These shares are assumptions. Edit them to match your habits.';
   renderHourlyInfo();
@@ -241,7 +242,7 @@ function conditionsList(o) {
     const d = p.discounts || {};
     if (d.promptPaymentPct) items.push(`${d.promptPaymentPct}% prompt-payment discount${state.prefs.promptPay === false ? ' (not applied: you unticked it)' : ' (applied)'}.`);
     if (d.monthlyCreditDollars) items.push(`$${d.monthlyCreditDollars}/month credit (applied).`);
-    if (d.bundle) items.push(`Dual-fuel credit${d.bundle.monthlyCreditDollars ? ` $${d.bundle.monthlyCreditDollars}/month` : ''}${d.bundle.dailyCreditCents ? ` ${d.bundle.dailyCreditCents}c/day` : ''}${d.bundle.pct ? ` ${d.bundle.pct}%` : ''}${o.bundle ? ' (applied)' : ' (not applied: needs both fuels from the same retailer)'}.`);
+    if (d.bundle) items.push(`Dual-fuel credit${d.bundle.monthlyCreditDollars ? ` $${d.bundle.monthlyCreditDollars}/month` : ''}${d.bundle.dailyCreditCents ? ` ${d.bundle.dailyCreditCents}c/day` : ''}${d.bundle.pct ? ` ${d.bundle.pct}%` : ''}${d.bundle.unconfirmed && !state.prefs.unconfirmedCredits ? ' (not counted: its conditions are not shown)' : o.bundle ? ' (applied)' : ' (not applied: needs both fuels from the same retailer)'}.`);
     if (d.oneOffCreditDollars) items.push(`One-off $${d.oneOffCreditDollars} sign-up credit${state.prefs.oneOffCredits === false ? ' (not counted: you unticked it)' : ' (counted, spread over year 1)'}.`);
     if (p.exitFee && p.fixedTerm !== true) items.push(`${p.provider}: exit fee: ${p.exitFee}.`);
     items.push(...c.filter((x) => !/^Low-user plan:/.test(x)));
@@ -276,6 +277,24 @@ function termLine(p) {
   if (!p) return '';
   const t = p.fixedTerm === true ? `fixed term${p.termMonths ? ` (${p.termMonths} months)` : ''}${p.exitFee ? `, exit fee ${p.exitFee}` : ', exit fee not stated'}` : p.fixedTerm === false ? `no fixed term${p.exitFee ? ` (exit fee: ${p.exitFee})` : ''}` : 'term and exit fees not shown in the source';
   return `<div class="small"><strong>${esc(p.provider)} ${p.fuel === 'gas' ? 'gas' : 'power'}:</strong> ${esc(t)}</div>`;
+}
+
+/** "With/without" figures for one-off costs and credits whose conditions aren't shown. */
+function altLines(o) {
+  const plans = [o.elecPlan, o.gasPlan].filter(Boolean);
+  const sc = costScenario(state);
+  const f = state.prefs.fuels;
+  const scen = f === 'electricity' ? { ...sc, gasKwh: 0, months: sc.months.map((m) => ({ ...m, gasKwh: 0 })) } : f === 'gas' ? { ...sc, elecKwh: 0, months: sc.months.map((m) => ({ ...m, elecKwh: 0 })) } : sc;
+  const base = { promptPay: state.prefs.promptPay !== false, oneOffCredits: state.prefs.oneOffCredits !== false, unconfirmedCredits: !!state.prefs.unconfirmedCredits };
+  const cost = (extra) => costOffer({ elecPlan: o.elecPlan, gasPlan: o.gasPlan }, scen, { ...base, ...extra }).annual;
+  const out = [];
+  const up = plans.find((p) => p.upfrontCostDollars);
+  if (up) out.push(`Without the one-off ${up.upfrontCostNote || `$${up.upfrontCostDollars} cost`} (from year 2): <strong>${money0(cost({ upfrontCosts: false }))}/yr</strong>`);
+  const unc = plans.find((p) => p.discounts?.bundle?.unconfirmed);
+  if (unc && o.elecPlan && o.gasPlan && (o.elecPlan.bundleGroup || o.elecPlan.provider) === (o.gasPlan.bundleGroup || o.gasPlan.provider)) {
+    out.push(base.unconfirmedCredits ? `Without the $${unc.discounts.bundle.monthlyCreditDollars}/month credit (conditions not shown): <strong>${money0(cost({ unconfirmedCredits: false }))}/yr</strong>` : `With the $${unc.discounts.bundle.monthlyCreditDollars}/month credit (conditions not shown, not counted above): <strong>${money0(cost({ unconfirmedCredits: true }))}/yr</strong>`);
+  }
+  return out.length ? `<div class="small alt">${out.join('<br>')}</div>` : '';
 }
 
 function renderVerdict(offers, raw) {
@@ -371,6 +390,7 @@ function renderResults() {
           ${tags.length ? `<div class="tags">${tags.map((t) => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}
           <p class="small muted">${money(o.monthlyAvg)} a month on average${o.vsBaselineAnnual != null && !o.isBaseline ? ` · ${o.vsBaselineAnnual < 0 ? `${money(-o.vsBaselineAnnual)} a year less than your current plan` : `${money(o.vsBaselineAnnual)} a year more than your current plan`}` : ''}</p>
           ${rateLine(o.elecPlan)}${o.gasPlan && o.gasPlan !== o.elecPlan ? rateLine(o.gasPlan) : ''}
+          ${altLines(o)}
           ${termLine(o.elecPlan)}${o.gasPlan && o.gasPlan !== o.elecPlan ? termLine(o.gasPlan) : ''}
           ${o.warnings.length ? `<div class="warn-text">${o.warnings.map(esc).join('<br>')}</div>` : ''}
           ${o.assumptions.length ? `<div class="assume"><strong>How it's costed:</strong><ul>${o.assumptions.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''}
